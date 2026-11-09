@@ -100,6 +100,16 @@ input{font-family:var(--b)}
 .inp{flex:1;min-width:0;background:var(--panel2);border:1px solid var(--line);color:var(--tx);border-radius:12px;padding:11px;font-size:15px}
 .inp.s{flex:0 0 78px}.adm{border-color:var(--gold)}
 .x{background:none;border:1px solid var(--line);color:var(--mut);border-radius:8px;padding:5px 9px;cursor:pointer}
+@keyframes rot{to{transform:rotate(360deg)}}.a-rot svg{animation:rot 7s linear infinite}
+.wheelbox{position:relative;width:240px;height:240px;margin:10px auto 16px}
+.wheel{width:100%;height:100%;transition:transform 4.6s cubic-bezier(.12,.7,.1,1)}
+.ptr{position:absolute;left:50%;top:-8px;transform:translateX(-50%);width:0;height:0;border:9px solid transparent;border-top:16px solid var(--gold);z-index:2}
+.cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+.col{border:2px solid transparent;border-radius:14px;padding:14px 4px;font-weight:800;color:#fff;cursor:pointer;text-align:center;font-size:14px}
+.col small{display:block;font-weight:700;opacity:.85;font-size:11px;margin-top:2px}
+.col.red{background:#c2203f}.col.black{background:#1d1620;border-color:#4a3a46}.col.green{background:#14804f}
+.col.on{border-color:var(--gold);box-shadow:0 0 18px #ffc46b55}
+.hist{display:flex;gap:6px;justify-content:center;margin-top:12px;min-height:22px}.hist i{width:22px;height:22px;border-radius:50%;display:block}
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
 </style>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -119,6 +129,7 @@ input{font-family:var(--b)}
   <div id="gList"><div class="card" style="margin-top:0"><h2><i data-i="game" data-a="wig"></i>Мини-игры</h2><div class="sub">Выбери игру и зарабатывай VALYX Coins</div></div>
     <div class="glist">
       <button class="gcard" onclick="openGame()"><div class="gi"><i data-i="bomb" data-a="pls"></i></div><div><h3>Сапёр</h3><small>Открывай клетки, расти ставку и вовремя забирай выигрыш</small><span class="pill">Играть</span></div></button>
+      <button class="gcard" onclick="openRoul()" style="animation-delay:.08s"><div class="gi"><i data-i="roulette" data-a="rot"></i></div><div><h3>Рулетка</h3><small>Красное, чёрное или зелёное. Колесо крутится, цвет выпадает случайно</small><span class="pill">Играть</span></div></button>
       <div class="gcard lock"><div class="gi"><i data-i="lock" data-a=""></i></div><div><h3>Скоро новая игра</h3><small>Мы уже работаем над следующей</small><span class="pill">Скоро</span></div></div>
     </div></div>
   <div id="gView" style="display:none">
@@ -131,14 +142,23 @@ input{font-family:var(--b)}
     <div class="stat"><span>Следующая клетка</span><span id="nxt">0</span></div>
     <div class="grid" id="grid"></div><button class="btn" id="gbtn" onclick="gameBtn()">Играть</button></div>
   </div>
+  <div id="rView" style="display:none">
+    <button class="back" onclick="closeGame()"><i data-i="back" data-a=""></i>Все игры</button>
+    <div class="card"><h2><i data-i="roulette" data-a="rot"></i>Рулетка</h2><div class="sub">Выбери цвет и ставку. Красное и чёрное платят x2, зелёное x36.</div>
+    <div class="wheelbox"><div class="ptr"></div><svg class="wheel" id="wheel" viewBox="-100 -100 200 200"></svg></div>
+    <div class="lbl">Ставка</div><div class="row" id="rbets"></div>
+    <div class="lbl">Цвет</div><div class="cols" id="rcols"></div>
+    <div class="stat"><span>Лимит на сегодня</span><span id="rlim"></span></div><div class="bar"><i id="rlimbar"></i></div>
+    <button class="btn" id="rbtn" onclick="spin()">Крутить</button><div class="hist" id="hist"></div></div>
+  </div>
 </section>
 
 <section class="page" id="p-shop">
-  <div class="card" style="margin-top:0"><h2><i data-i="cart" data-a="bob"></i>Магазин VP</h2><div class="sub">Заказ попадёт в корзину в профиле. Код выдачи отправь стримеру.</div></div>
+  <div class="card" style="margin-top:0"><h2><i data-i="cart" data-a="bob"></i>Магазин VP</h2><div class="sub">Стример получит твою заявку и пришлёт код VP. Он появится в корзине в профиле.</div></div>
   <div class="prods" id="shopList"></div>
 </section>
 
-<section class="page" id="p-top"><div class="card" style="margin-top:0"><h2><i data-i="trophy" data-a="pls"></i>Топ игроков</h2><div class="sub">Рейтинг по накопленным баллам</div><div id="topList"></div></div></section>
+<section class="page" id="p-top"><div class="card" style="margin-top:0"><h2><i data-i="trophy" data-a="pls"></i>Топ игроков</h2><div class="sub" id="topsub"></div><div id="topList"></div></div></section>
 
 <section class="page" id="p-me">
   <div class="card" style="margin-top:0"><h2 id="nick"></h2><div class="sub">Заработано всего: <b id="earned"></b><br>Серия входов: <b id="streakTxt"></b></div>
@@ -147,7 +167,7 @@ input{font-family:var(--b)}
   <div class="card adm" id="adm" style="display:none"><h2><i data-i="crown" data-a="bob"></i>Панель стримера</h2><div class="sub">Новый промокод: название, награда и лимит активаций (0 = без лимита)</div>
     <div class="row"><input class="inp" id="ac" maxlength="20" placeholder="Код"><input class="inp s" id="ar" type="number" placeholder="Баллы"><input class="inp s" id="am" type="number" placeholder="Лимит"></div>
     <button class="btn" onclick="createPromo()">Создать промокод</button><div id="plist" style="margin:10px 0 18px"></div>
-    <div class="sub">Проверка кода выдачи VP</div><div class="row" style="margin:0"><input class="inp" id="oc" placeholder="VLX-XXXX-XXXX"><button class="chip" style="flex:0 0 100px" onclick="checkOrder()">Проверить</button></div><div id="ores"></div></div>
+    <div class="sub">Заявки на VP</div><div id="pend" style="margin-bottom:14px"></div><div class="sub">Проверка кода выдачи VP</div><div class="row" style="margin:0"><input class="inp" id="oc" placeholder="VLX-XXXX-XXXX"><button class="chip" style="flex:0 0 100px" onclick="checkOrder()">Проверить</button></div><div id="ores"></div></div>
   <div class="card"><h2><i data-i="cart" data-a="bob"></i>Корзина</h2><div class="sub">Твои заказы VP</div><div id="orders"></div></div>
 </section>
 </main>
@@ -160,9 +180,9 @@ input{font-family:var(--b)}
 </nav>
 <script>
 var SB="https://vupypyzamanapkafytoq.supabase.co",KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1cHlweXphbWFuYXBrYWZ5dG9xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQxNzIwMDcsImV4cCI6MjEwOTc0ODAwN30.72_30VCo5p_AKa84P3bqyeVc97rDqL0mHtqYvVUMA7Y";
-var TG=window.Telegram&&window.Telegram.WebApp,tok=null,U=null,G=null,spent=0,orders=[],busy=false;
+var TG=window.Telegram&&window.Telegram.WebApp,tok=null,U=null,G=null,spentM=0,spentR=0,orders=[],busy=false;
 var bet=100,mc=5,BETS=[50,100,200,500],MINES=[3,5,8,12],LIMIT=1000,SIZE=25;
-var MSG={"already claimed":"Награда за сегодня уже получена","promo not found":"Такого промокода нет","promo limit reached":"Лимит активаций исчерпан","already redeemed":"Ты уже активировал этот код","not enough balance":"Недостаточно баллов","daily limit":"Дневной лимит 1000 баллов исчерпан","game in progress":"Сначала закончи текущую игру","forbidden":"Нет доступа","already issued":"Код уже был выдан ранее","order not found":"Код не найден","open a cell first":"Сначала открой клетку"};
+var MSG={"already claimed":"Награда за сегодня уже получена","promo not found":"Такого промокода нет","promo limit reached":"Лимит активаций исчерпан","already redeemed":"Ты уже активировал этот код","not enough balance":"Недостаточно баллов","daily limit":"Дневной лимит в этой игре (1000 баллов) исчерпан","game in progress":"Сначала закончи текущую игру","forbidden":"Нет доступа","already issued":"Код уже был выдан ранее","order not found":"Код не найден","open a cell first":"Сначала открой клетку"};
 function $(i){return document.getElementById(i)}
 function fmt(n){return String(n).replace(/\B(?=(\d{3})+(?!\d))/g," ")}
 function toast(t){var e=$("toast");e.textContent=t;e.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(function(){e.style.display="none"},2400)}
@@ -181,7 +201,7 @@ function rpc(n,a){return api("/rest/v1/rpc/"+n,{method:"POST",body:a||{}})}
 var P={home:'<path d="M3 11l9-8 9 8v10h-6v-6H9v6H3z"/>',game:'<path d="M6 8h12a4 4 0 014 4v3a3 3 0 01-5.2 2L15 15H9l-1.8 2A3 3 0 012 15v-3a4 4 0 014-4z"/><path d="M8 10v4M6 12h4M16 11h.01M18 13h.01"/>',
 cart:'<path d="M3 4h2l2.5 11h10L20 7H6.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/>',trophy:'<path d="M7 4h10v5a5 5 0 01-10 0zM7 6H4v2a3 3 0 003 3M17 6h3v2a3 3 0 01-3 3M12 14v4M8 21h8"/>',
 user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/>',gift:'<rect x="3" y="9" width="18" height="4" rx="1"/><path d="M5 13v8h14v-8M12 9v12M12 9S9 3 7.5 5 12 9 12 9zM12 9s3-6 4.5-4S12 9 12 9z"/>',
-bomb:'<circle cx="11" cy="14" r="7"/><path d="M16 8l3-3M19 2v3M17 4h4"/>',gem:'<path d="M6 3h12l4 6-10 12L2 9zM2 9h20M9 3l-2 6 5 12 5-12-2-6"/>',
+bomb:'<circle cx="11" cy="14" r="7"/><path d="M16 8l3-3M19 2v3M17 4h4"/>',roulette:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/>',gem:'<path d="M6 3h12l4 6-10 12L2 9zM2 9h20M9 3l-2 6 5 12 5-12-2-6"/>',
 star:'<path d="M12 2l3 7 7 .5-5 5 1.5 7.5-6.5-4-6.5 4L7 14.5l-5-5L9 9z" fill="currentColor"/>',lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/>',back:'<path d="M15 5l-7 7 7 7"/>',crown:'<path d="M3 8l4 4 5-7 5 7 4-4-2 11H5z"/>'};
 function ic(n,a){return '<i class="ic a-'+(a||"")+'"><svg viewBox="0 0 24 24">'+P[n]+'</svg></i>'}
 function icons(){document.querySelectorAll("i[data-i]").forEach(function(e){e.outerHTML=ic(e.dataset.i,e.dataset.a)})}
@@ -189,10 +209,10 @@ function icons(){document.querySelectorAll("i[data-i]").forEach(function(e){e.ou
 /* nav */
 function go(p){document.querySelectorAll(".page").forEach(function(e){e.classList.remove("on")});$("p-"+p).classList.add("on");
  document.querySelectorAll("nav button").forEach(function(b){b.classList.toggle("on",b.dataset.p===p)});
- if(p==="games")closeGame();if(p==="top")loadTop();if(p==="me"){loadOrders();listPromos()}render();window.scrollTo(0,0)}
+ if(p==="games")closeGame();if(p==="top")loadTop();if(p==="me"){loadOrders();loadAdmin()}render();window.scrollTo(0,0)}
 $("nav").onclick=function(e){var b=e.target.closest("button");if(b)go(b.dataset.p)};
 async function refresh(){var r=await api("/rest/v1/profiles?select=*");U=r[0];
- var l=await api("/rest/v1/game_limits?select=spent&day=eq."+msk());spent=l.length?l[0].spent:0;render()}
+ var l=await api("/rest/v1/game_limits?select=game,spent&day=eq."+msk());spentM=0;spentR=0;l.forEach(function(x){if(x.game==="roulette")spentR=x.spent;else spentM=x.spent});render()}
 /* daily */
 function nextDay(){if(!U)return 0;var t=msk();if(U.last_claim===t)return 0;if(U.last_claim===msk(Date.now()-864e5))return U.streak%7+1;return 1}
 async function claim(){if(busy)return;busy=true;try{var w=await rpc("claim_daily");await refresh();toast("+"+w+" VALYX Coins")}catch(e){fail(e)}busy=false}
@@ -205,8 +225,10 @@ function renderDaily(){if(!U)return;var nd=nextDay(),got=U.last_claim===msk(),cu
   $("dsub").textContent=U.streak===7?"Неделя пройдена. Завтра цикл начнётся заново":"Заходи завтра за новой наградой"}}
 setInterval(function(){if($("p-home").classList.contains("on"))renderDaily()},1000);
 /* minesweeper (server side) */
-function openGame(){$("gList").style.display="none";$("gView").style.display="block";renderGame()}
-function closeGame(){$("gList").style.display="block";$("gView").style.display="none"}
+function showG(v){$("gList").style.display=v?"none":"block";$("gView").style.display=v==="m"?"block":"none";$("rView").style.display=v==="r"?"block":"none"}
+function openGame(){showG("m");renderGame()}
+function closeGame(){showG("")}
+function openRoul(){showG("r");renderRoul()}
 function chips(id,arr,val,fn,icn){$(id).innerHTML=arr.map(function(v){return '<button class="chip'+(v===val?" on":"")+'" onclick="'+fn+'('+v+')">'+ic(icn,"")+v+'</button>'}).join("")}
 function live(){return G&&G.status==="active"}
 function setBet(v){if(live())return;bet=v;renderGame()}
@@ -218,7 +240,7 @@ async function gameBtn(){if(busy)return;busy=true;
 async function pick(i){if(busy||!live())return;busy=true;
  try{G=await rpc("mines_open",{p_game:G.id,p_cell:i});if(G.status==="lost")toast("Бомба! Ставка сгорела");if(G.status==="cashed")toast("Поле пройдено! +"+fmt(G.payout));await refresh()}catch(e){fail(e)}busy=false;renderGame()}
 function renderGame(){chips("bets",BETS,bet,"setBet","star");chips("mines",MINES,mc,"setMines","bomb");
- $("lim").textContent=fmt(spent)+" / "+fmt(LIMIT);$("limbar").style.width=Math.min(100,spent/LIMIT*100)+"%";
+ $("lim").textContent=fmt(spentM)+" / "+fmt(LIMIT);$("limbar").style.width=Math.min(100,spentM/LIMIT*100)+"%";
  var on=live(),op=(G&&G.opened)||[],mi=(G&&G.mine_cells)||[],h="";
  for(var i=0;i<SIZE;i++){var c="cell",t="",o=op.indexOf(i)>-1,m=mi.indexOf(i)>-1;
   if(o){if(m){c+=" bomb";t=ic("bomb","")}else{c+=" safe";t=ic("gem","")}}else if(m){c+=" bomb ghost";t=ic("bomb","")}
@@ -227,19 +249,21 @@ function renderGame(){chips("bets",BETS,bet,"setBet","star");chips("mines",MINES
  if(on){gb.textContent=op.length?"Забрать "+fmt(G.payout):"Открой первую клетку";gb.disabled=!op.length;$("cur").textContent=fmt(G.payout);$("nxt").textContent=fmt(G.next)}
  else{gb.disabled=false;gb.textContent="Играть за "+bet;$("cur").textContent=G&&G.status==="cashed"?fmt(G.payout):"0";$("nxt").textContent=fmt(Math.floor(bet*0.96*25/(25-mc)))}}
 /* shop */
-var PACKS=[{vp:500,c:5000,col:"#2b1020",n:2},{vp:1000,c:10000,col:"#40101d",n:3,tag:"Хит"},{vp:2000,c:20000,col:"#3a1a0b",n:4,tag:"Выгодно"}];
+var PACKS=[{vp:240,c:12000,col:"#241022",n:1},{vp:475,c:23000,col:"#2b1020",n:2},{vp:1000,c:47000,col:"#40101d",n:3,tag:"Хит"},{vp:1520,c:70000,col:"#3a1520",n:3},{vp:2050,c:93500,col:"#3a1a0b",n:4,tag:"Выгодно"},{vp:2575,c:116000,col:"#2a1a22",n:4},{vp:3650,c:162000,col:"#3b1608",n:5,tag:"Максимум"}];
 function renderShop(){var bal=U?U.balance:0;$("shopList").innerHTML=PACKS.map(function(p,i){var st="";for(var k=0;k<p.n;k++)st+='<div class="vp" style="--k:'+k+'">V</div>';
  var ok=bal>=p.c;return '<div class="prod" style="--c:'+p.col+';--i:'+i+'" onclick="buy('+i+')">'+(p.tag?'<div class="tagb">'+p.tag+'</div>':'')+'<div class="stack">'+st+'</div><h3>'+fmt(p.vp)+' <span>VP</span></h3><div class="price"><b>'+ic("star","spn")+fmt(p.c)+'</b><button class="buy'+(ok?"":" no")+'">'+(ok?"Купить":"Не хватает "+fmt(p.c-bal))+'</button></div></div>'}).join("")}
 async function buy(i){var p=PACKS[i];if(busy)return;if(U.balance<p.c){toast("Не хватает "+fmt(p.c-U.balance)+" баллов");return}
  if(!confirm("Купить "+p.vp+" VP за "+fmt(p.c)+" баллов?"))return;busy=true;
- try{await rpc("buy_vp",{p_vp:p.vp});await refresh();toast("Заказ в корзине");busy=false;go("me");return}catch(e){fail(e)}busy=false}
+ try{var oc=await rpc("buy_vp",{p_vp:p.vp});await refresh();api("/functions/v1/bot-notify",{method:"POST",body:{action:"new_order",code:oc}}).catch(function(){});toast("Заказ в корзине");busy=false;go("me");return}catch(e){fail(e)}busy=false}
 /* rating, profile */
-async function loadTop(){try{var L=await rpc("leaderboard");$("topList").innerHTML=L.map(function(r,i){return '<div class="item"><div class="rk"><i>'+(i+1)+'</i>'+(i===0?ic("crown","bob"):"")+'<span class="'+(U&&r.nick===U.nick?"me":"")+'">'+esc(r.nick)+'</span></div><b>'+fmt(r.earned)+'</b></div>'}).join("")}catch(e){}}
+async function loadTop(){try{var L=await rpc("leaderboard"),d=new Date().toLocaleDateString("sv-SE",{timeZone:"Europe/Moscow"}).split("-"),left=new Date(+d[0],+d[1],0).getDate()-(+d[2])+1;
+ $("topsub").textContent="Рейтинг месяца. Сброс через "+left+" дн. Баллы на балансе остаются";
+ $("topList").innerHTML=L.length?L.map(function(r,i){return '<div class="item"><div class="rk"><i>'+(i+1)+'</i>'+(i===0?ic("crown","bob"):"")+'<span class="'+(U&&r.nick===U.nick?"me":"")+'">'+esc(r.nick)+'</span></div><b>'+fmt(r.score)+'</b></div>'}).join(""):'<div class="sub">В этом месяце пока никого. Стань первым!</div>'}catch(e){}}
 function esc(s){return String(s).replace(/[&<>"']/g,function(c){return "&#"+c.charCodeAt(0)+";"})}
 async function setNick(){var v=$("nickIn").value.trim().slice(0,16);if(!v)return;try{await api("/rest/v1/profiles?id=eq."+U.id,{method:"PATCH",body:{nick:v}});await refresh();toast("Ник сохранён")}catch(e){fail(e)}}
-async function loadOrders(){try{orders=await api("/rest/v1/orders?select=vp,code,status,created_at&user_id=eq."+U.id+"&order=created_at.desc");renderMe()}catch(e){}}
+async function loadOrders(){try{orders=await api("/rest/v1/orders?select=vp,code,status,created_at,vp_code&user_id=eq."+U.id+"&order=created_at.desc");renderMe()}catch(e){}}
 function renderMe(){if(!U)return;$("nick").textContent=U.nick;$("earned").textContent=fmt(U.earned);$("streakTxt").textContent=U.streak+" из 7";
- $("orders").innerHTML=orders.length?orders.map(function(o){return '<div class="item"><div><b>'+fmt(o.vp)+' VP</b><small>'+new Date(o.created_at).toLocaleString("ru-RU")+'</small><span class="code">'+o.code+'</span></div><span class="tag">'+(o.status==="issued"?"Выдано":"Ожидает выдачи")+'</span></div>'}).join(""):'<div class="sub">Пока пусто. Обменяй баллы в магазине.</div>';
+ $("orders").innerHTML=orders.length?orders.map(function(o){return '<div class="item"><div><b>'+fmt(o.vp)+' VP</b><small>'+new Date(o.created_at).toLocaleString("ru-RU")+'</small><span class="code">'+o.code+'</span>'+(o.vp_code?'<small>Твой код VP:</small><span class="code" style="color:var(--ok);user-select:all">'+esc(o.vp_code)+'</span>':'')+'</div><span class="tag">'+(o.status==="issued"?"Выдано":"Ожидает выдачи")+'</span></div>'}).join(""):'<div class="sub">Пока пусто. Обменяй баллы в магазине.</div>';
  $("adm").style.display=U.is_admin?"block":"none"}
 /* promo codes */
 function cl(s){return s.toUpperCase().replace(/[^A-Z0-9_-]/g,"")}
@@ -250,14 +274,37 @@ async function listPromos(){if(!U||!U.is_admin)return;try{var p=await api("/rest
  r.forEach(function(x){n[x.code]=(n[x.code]||0)+1});
  $("plist").innerHTML=p.map(function(v){return '<div class="item"><div><b class="code">'+v.code+'</b><small>+'+fmt(v.reward)+' · активаций '+(n[v.code]||0)+(v.max_uses?' из '+v.max_uses:'')+'</small></div></div>'}).join("")||'<div class="sub">Промокодов пока нет</div>'}catch(e){}}
 /* order check (admin) */
+function loadAdmin(){listPromos();loadPending()}
+async function loadPending(){if(!U||!U.is_admin)return;try{var r=await rpc("admin_pending_orders");$("pend").innerHTML=r.length?r.map(function(o){return '<div class="item"><div><b>'+fmt(o.vp)+' VP</b><small>'+esc(o.nick)+' · '+new Date(o.created_at).toLocaleString("ru-RU")+'</small><span class="code">'+o.code+'</span></div><button class="x" onclick="openOrder(\''+o.code+'\')">Открыть</button></div>'}).join(""):'<div class="sub">Новых заявок нет</div>'}catch(e){}}
+function openOrder(c){$("oc").value=c;checkOrder()}
 async function checkOrder(){var c=$("oc").value.trim().toUpperCase();if(!c)return;
- try{var r=await rpc("admin_check_order",{p_code:c});if(!r.length){$("ores").innerHTML='<div class="sub">Код не найден</div>';return}var o=r[0];
-  $("ores").innerHTML='<div class="item"><div><b>'+fmt(o.vp)+' VP</b><small>'+esc(o.nick)+' · '+new Date(o.created_at).toLocaleString("ru-RU")+'</small><span class="tag">'+(o.status==="issued"?"Уже выдан":"Не выдан")+'</span></div>'+(o.status==="issued"?'':'<button class="x" onclick="issueOrder()">Отметить выданным</button>')+'</div>'}catch(e){fail(e)}}
-async function issueOrder(){var c=$("oc").value.trim().toUpperCase();try{await rpc("admin_issue_order",{p_code:c});toast("Отмечено как выдано");checkOrder()}catch(e){fail(e)}}
+ try{var r=await rpc("admin_check_order",{p_code:c});if(!r.length){$("ores").innerHTML='<div class="sub">Код не найден</div>';return}var o=r[0],is=o.status==="issued";
+  $("ores").innerHTML='<div class="item" style="display:block"><b>'+fmt(o.vp)+' VP</b><small>'+esc(o.nick)+' · '+new Date(o.created_at).toLocaleString("ru-RU")+'</small><span class="tag">'+(is?"Уже выдан":"Не выдан")+'</span>'+(is?'':'<div class="row" style="margin:10px 0 0"><input class="inp" id="ovc" placeholder="Вставь код VP"><button class="chip" style="flex:0 0 100px" onclick="issueOrder()">Выдать</button></div>')+'</div>'}catch(e){fail(e)}}
+async function issueOrder(){var c=$("oc").value.trim().toUpperCase(),v=$("ovc").value.trim();if(v.length<3){toast("Вставь код VP");return}
+ try{await rpc("admin_issue_order",{p_code:c,p_vp_code:v});toast("Код выдан игроку");api("/functions/v1/bot-notify",{method:"POST",body:{action:"issued",code:c}}).catch(function(){});checkOrder();loadPending()}catch(e){fail(e)}}
+/* roulette */
+var RED=[1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36],rbet=100,rcol="red",rot=0,hist=[],CC={red:"#c2203f",black:"#1d1620",green:"#14804f"};
+function ncol(n){return n===0?"green":RED.indexOf(n)>-1?"red":"black"}
+function buildWheel(){var s="",a=2*Math.PI/37;for(var i=0;i<37;i++){var a0=i*a-Math.PI/2-a/2,a1=a0+a,am=a0+a/2,tx=78*Math.cos(am),ty=78*Math.sin(am);
+ s+='<path d="M0 0L'+95*Math.cos(a0)+' '+95*Math.sin(a0)+'A95 95 0 0 1 '+95*Math.cos(a1)+' '+95*Math.sin(a1)+'Z" fill="'+CC[ncol(i)]+'" stroke="#3a222e" stroke-width=".6"/><text x="'+tx+'" y="'+ty+'" fill="#fff" font-size="7" font-weight="700" text-anchor="middle" dominant-baseline="central" transform="rotate('+(am*180/Math.PI+90)+' '+tx+' '+ty+')">'+i+'</text>'}
+ $("wheel").innerHTML=s+'<circle r="14" fill="#171019" stroke="#ffc46b" stroke-width="1.5"/>'}
+function setRBet(v){if(!busy){rbet=v;renderRoul()}}
+function setRCol(c){if(!busy){rcol=c;renderRoul()}}
+function renderRoul(){chips("rbets",BETS,rbet,"setRBet","star");
+ $("rcols").innerHTML=[["red","Красное","x2"],["black","Чёрное","x2"],["green","Зелёное","x36"]].map(function(c){return '<button class="col '+c[0]+(rcol===c[0]?" on":"")+'" onclick="setRCol(\''+c[0]+'\')">'+c[1]+'<small>'+c[2]+'</small></button>'}).join("");
+ $("rlim").textContent=fmt(spentR)+" / "+fmt(LIMIT);$("rlimbar").style.width=Math.min(100,spentR/LIMIT*100)+"%";
+ $("rbtn").disabled=busy;$("rbtn").textContent="Крутить за "+rbet;
+ $("hist").innerHTML=hist.map(function(c){return '<i style="background:'+CC[c]+'"></i>'}).join("")}
+async function spin(){if(busy)return;busy=true;$("rbtn").disabled=true;var r;
+ try{r=await rpc("roulette_spin",{p_bet:rbet,p_color:rcol})}catch(e){fail(e);busy=false;renderRoul();return}
+ rot=(Math.floor(rot/360)+6)*360-r.number*360/37;$("wheel").style.transform="rotate("+rot+"deg)";
+ setTimeout(async function(){hist.unshift(r.color);hist=hist.slice(0,10);
+  toast(r.payout?"Выпало "+r.number+"! +"+fmt(r.payout):"Выпало "+r.number+" ("+({red:"красное",black:"чёрное",green:"зелёное"})[r.color]+")");
+  try{await refresh()}catch(e){}busy=false;renderRoul()},4800)}
 /* render + start */
-function render(){if(!U)return;$("bal").textContent=fmt(U.balance);renderDaily();renderGame();renderShop();renderMe()}
+function render(){if(!U)return;$("bal").textContent=fmt(U.balance);renderDaily();renderGame();renderRoul();renderShop();renderMe()}
 async function beat(){try{$("onl").textContent=await rpc("heartbeat")}catch(e){}}
-async function boot(){icons();
+async function boot(){icons();buildWheel();
  if(!TG||!TG.initData){$("ovt").textContent="Открой сайт через Telegram";$("ovs").textContent="Нажми кнопку в боте, чтобы войти и играть.";return}
  try{TG.ready();TG.expand();await login();await refresh();G=await rpc("mines_current");await loadOrders();render();beat();setInterval(beat,60000);$("ov").style.display="none"}
  catch(e){$("ovt").textContent="Не удалось войти";$("ovs").textContent="Закрой и открой приложение заново. ("+e.message+")"}}
