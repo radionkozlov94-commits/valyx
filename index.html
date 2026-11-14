@@ -111,6 +111,15 @@ input{font-family:var(--b)}
 .col.on{border-color:var(--gold);box-shadow:0 0 18px #ffc46b55}
 .hist{display:flex;gap:6px;justify-content:center;margin-top:12px;min-height:22px}.hist i{width:22px;height:22px;border-radius:50%;display:block}
 .jc{display:block;width:100%;max-width:360px;margin:14px auto 0;aspect-ratio:360/560;border-radius:16px;touch-action:none;background:#120c16;border:1px solid var(--line)}
+.jwrap{position:relative;width:100%;max-width:360px;margin:14px auto 0;touch-action:none}
+.jwrap .jc{margin:0}
+.jwrap.fs{position:fixed;inset:0;z-index:8;max-width:none;margin:0;background:#0b080e;display:flex;align-items:center;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 50px) 0 env(safe-area-inset-bottom,0px)}
+.jwrap.fs .jc{height:100%;width:auto;max-width:100%;border-radius:0;border:0}
+.jx{display:none;position:absolute;top:calc(env(safe-area-inset-top,0px) + 8px);right:12px;width:40px;height:40px;border-radius:12px;background:rgba(10,6,14,.75);border:1px solid var(--line);color:#fff;font-size:18px;place-items:center;cursor:pointer;z-index:3}
+.jwrap.fs .jx{display:grid}
+.jfsui{display:none;position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 34px);padding:0 28px;text-align:center;z-index:2}
+.jwrap.fs:not(.run) .jfsui{display:block}
+.jfsui .res{color:#fff;font-weight:800;margin-bottom:10px;text-shadow:0 1px 6px #000}
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
 </style>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -148,8 +157,9 @@ input{font-family:var(--b)}
     <button class="back" onclick="closeGame()"><i data-i="back" data-a=""></i>Все игры</button>
     <div class="card"><h2><i data-i="jump" data-a="bob"></i>Valorant Jump</h2><div class="sub">Прыгай по платформам и поднимайся выше. Держи палец на левой или правой половине экрана, чтобы двигаться. 20 метров = 1 балл, до 500 баллов в день. Синие платформы двигаются, коричневые ломаются, красная пружина подбрасывает выше.</div>
     <div class="stat"><span>Сегодня заработано</span><span id="jused"></span></div><div class="bar"><i id="jbar"></i></div>
-    <canvas id="jc" class="jc"></canvas><div class="sub" id="jres" style="text-align:center;margin:10px 0 0"></div>
-    <button class="btn" id="jbtn" onclick="startJump()" style="margin-top:10px">Играть</button></div>
+    <div class="jwrap" id="jwrap"><canvas id="jc" class="jc"></canvas><button class="jx" onclick="jFull(false)">✕</button><div class="jfsui"><div class="res" id="jres2"></div><button class="btn" id="jbtn2" onclick="startJump()">Играть</button></div></div><div class="sub" id="jres" style="text-align:center;margin:10px 0 0"></div>
+    <button class="btn" id="jbtn" onclick="startJump()" style="margin-top:10px">Играть</button>
+    <button class="btn ghost" id="jfsbtn" onclick="jFull(true)" style="margin-top:10px">На весь экран</button></div>
     <div class="card"><h2><i data-i="trophy" data-a="pls"></i>Рекорды месяца</h2><div class="sub" id="jtopsub"></div><div id="jtop"></div><div class="sub" id="jwin" style="margin:12px 0 0"></div></div>
   </div>
   <div id="rView" style="display:none">
@@ -174,6 +184,9 @@ input{font-family:var(--b)}
   <div class="card" style="margin-top:0"><h2 id="nick"></h2><div class="sub">Заработано всего: <b id="earned"></b><br>Серия входов: <b id="streakTxt"></b></div>
     <div class="lbl">Сменить ник</div><div class="row"><input id="nickIn" maxlength="16" style="flex:1;min-width:0;background:var(--panel2);border:1px solid var(--line);color:var(--tx);border-radius:12px;padding:11px;font-size:15px"><button class="chip" style="flex:0 0 100px" onclick="setNick()">Сохранить</button></div></div>
   <div class="card"><h2><i data-i="gift" data-a="bob"></i>Промокод</h2><div class="sub">Введи код от стримера и получи бонус</div><div class="row" style="margin:0"><input class="inp" id="pc" maxlength="20" placeholder="Например VALYX100"><button class="chip" style="flex:0 0 120px" onclick="redeem()">Активировать</button></div></div>
+  <div class="card"><h2><i data-i="users" data-a="bob"></i>Пригласи друга</h2><div class="sub">Друг засчитывается, когда заработает 500 баллов (без промокодов) и зайдёт в игру минимум в 3 разных дня. Тогда ты получаешь 500 баллов, а дальше 2,5% от всего, что он зарабатывает.</div>
+    <div class="stat"><span>Получено с друзей</span><span id="rinc">0</span></div>
+    <div class="row" style="margin:12px 0"><button class="btn" onclick="shareRef()">Пригласить друга</button><button class="chip" style="flex:0 0 110px" onclick="copyRef()">Копировать</button></div><div id="rfr"></div></div>
   <div class="card adm" id="adm" style="display:none"><h2><i data-i="crown" data-a="bob"></i>Панель стримера</h2><div class="sub">Новый промокод: название, награда и лимит активаций (0 = без лимита)</div>
     <div class="row"><input class="inp" id="ac" maxlength="20" placeholder="Код"><input class="inp s" id="ar" type="number" placeholder="Баллы"><input class="inp s" id="am" type="number" placeholder="Лимит"></div>
     <button class="btn" onclick="createPromo()">Создать промокод</button><div id="plist" style="margin:10px 0 18px"></div>
@@ -190,7 +203,7 @@ input{font-family:var(--b)}
 </nav>
 <script>
 var SB="https://vupypyzamanapkafytoq.supabase.co",KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1cHlweXphbWFuYXBrYWZ5dG9xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQxNzIwMDcsImV4cCI6MjEwOTc0ODAwN30.72_30VCo5p_AKa84P3bqyeVc97rDqL0mHtqYvVUMA7Y";
-var TG=window.Telegram&&window.Telegram.WebApp,tok=null,U=null,G=null,spentM=0,spentR=0,orders=[],busy=false;
+var BOT="",TG=window.Telegram&&window.Telegram.WebApp,tok=null,U=null,G=null,spentM=0,spentR=0,orders=[],busy=false;
 var bet=100,mc=5,BETS=[50,100,200,500],MINES=[3,5,8,12],LIMIT=1000,SIZE=25;
 var MSG={"already claimed":"Награда за сегодня уже получена","promo not found":"Такого промокода нет","promo limit reached":"Лимит активаций исчерпан","already redeemed":"Ты уже активировал этот код","not enough balance":"Недостаточно баллов","daily limit":"Дневной лимит в этой игре (1000 баллов) исчерпан","game in progress":"Сначала закончи текущую игру","forbidden":"Нет доступа","already issued":"Код уже был выдан ранее","order not found":"Код не найден","open a cell first":"Сначала открой клетку"};
 function $(i){return document.getElementById(i)}
@@ -201,7 +214,7 @@ function msk(t){return new Date(t||Date.now()).toLocaleDateString("sv-SE",{timeZ
 /* network */
 async function login(){var d=TG&&TG.initData;if(!d)throw new Error("nogram");
  var r=await fetch(SB+"/functions/v1/telegram-auth",{method:"POST",headers:{"Content-Type":"application/json",apikey:KEY,Authorization:"Bearer "+KEY},body:JSON.stringify({initData:d})});
- var j=await r.json();if(!r.ok)throw new Error(j.error||"login");tok=j.access_token}
+ var j=await r.json();if(!r.ok)throw new Error(j.error||"login");tok=j.access_token;BOT=j.bot||BOT}
 async function api(path,o,retry){o=o||{};
  var r=await fetch(SB+path,{method:o.method||"GET",headers:{apikey:KEY,Authorization:"Bearer "+tok,"Content-Type":"application/json"},body:o.body?JSON.stringify(o.body):undefined});
  if(r.status===401&&!retry){await login();return api(path,o,1)}
@@ -211,7 +224,7 @@ function rpc(n,a){return api("/rest/v1/rpc/"+n,{method:"POST",body:a||{}})}
 var P={home:'<path d="M3 11l9-8 9 8v10h-6v-6H9v6H3z"/>',game:'<path d="M6 8h12a4 4 0 014 4v3a3 3 0 01-5.2 2L15 15H9l-1.8 2A3 3 0 012 15v-3a4 4 0 014-4z"/><path d="M8 10v4M6 12h4M16 11h.01M18 13h.01"/>',
 cart:'<path d="M3 4h2l2.5 11h10L20 7H6.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/>',trophy:'<path d="M7 4h10v5a5 5 0 01-10 0zM7 6H4v2a3 3 0 003 3M17 6h3v2a3 3 0 01-3 3M12 14v4M8 21h8"/>',
 user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/>',gift:'<rect x="3" y="9" width="18" height="4" rx="1"/><path d="M5 13v8h14v-8M12 9v12M12 9S9 3 7.5 5 12 9 12 9zM12 9s3-6 4.5-4S12 9 12 9z"/>',
-bomb:'<circle cx="11" cy="14" r="7"/><path d="M16 8l3-3M19 2v3M17 4h4"/>',roulette:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/>',jump:'<path d="M12 19V5M6 11l6-6 6 6M5 22h14"/>',gem:'<path d="M6 3h12l4 6-10 12L2 9zM2 9h20M9 3l-2 6 5 12 5-12-2-6"/>',
+bomb:'<circle cx="11" cy="14" r="7"/><path d="M16 8l3-3M19 2v3M17 4h4"/>',roulette:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/>',jump:'<path d="M12 19V5M6 11l6-6 6 6M5 22h14"/>',users:'<circle cx="9" cy="8" r="3.5"/><path d="M2 21a7 7 0 0114 0M17 4.5a3.5 3.5 0 010 7M19 21a6 6 0 00-3-5.2"/>',gem:'<path d="M6 3h12l4 6-10 12L2 9zM2 9h20M9 3l-2 6 5 12 5-12-2-6"/>',
 star:'<path d="M12 2l3 7 7 .5-5 5 1.5 7.5-6.5-4-6.5 4L7 14.5l-5-5L9 9z" fill="currentColor"/>',lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/>',back:'<path d="M15 5l-7 7 7 7"/>',crown:'<path d="M3 8l4 4 5-7 5 7 4-4-2 11H5z"/>'};
 function ic(n,a){return '<i class="ic a-'+(a||"")+'"><svg viewBox="0 0 24 24">'+P[n]+'</svg></i>'}
 function icons(){document.querySelectorAll("i[data-i]").forEach(function(e){e.outerHTML=ic(e.dataset.i,e.dataset.a)})}
@@ -219,7 +232,7 @@ function icons(){document.querySelectorAll("i[data-i]").forEach(function(e){e.ou
 /* nav */
 function go(p){document.querySelectorAll(".page").forEach(function(e){e.classList.remove("on")});$("p-"+p).classList.add("on");
  document.querySelectorAll("nav button").forEach(function(b){b.classList.toggle("on",b.dataset.p===p)});
- if(J&&J.run)jend();if(p==="games")closeGame();if(p==="top")loadTop();if(p==="me"){loadOrders();loadAdmin()}render();window.scrollTo(0,0)}
+ if(J&&J.run)jend();if(p==="games")closeGame();if(p==="top")loadTop();if(p==="me"){loadOrders();loadAdmin();loadRef()}render();window.scrollTo(0,0)}
 $("nav").onclick=function(e){var b=e.target.closest("button");if(b)go(b.dataset.p)};
 async function refresh(){var r=await api("/rest/v1/profiles?select=*");U=r[0];
  var l=await api("/rest/v1/game_limits?select=game,spent&day=eq."+msk());spentM=0;spentR=0;spentJ=0;l.forEach(function(x){if(x.game==="roulette")spentR=x.spent;else if(x.game==="jump")spentJ=x.spent;else spentM=x.spent});render()}
@@ -237,7 +250,7 @@ setInterval(function(){if($("p-home").classList.contains("on"))renderDaily()},10
 /* minesweeper (server side) */
 function showG(v){$("gList").style.display=v?"none":"block";$("gView").style.display=v==="m"?"block":"none";$("rView").style.display=v==="r"?"block":"none";$("jView").style.display=v==="j"?"block":"none"}
 function openGame(){showG("m");renderGame()}
-function closeGame(){if(J&&J.run)jend();showG("")}
+function closeGame(){if(J&&J.run)jend();if(jfs)jFull(false);showG("")}
 function openRoul(){showG("r");renderRoul()}
 function chips(id,arr,val,fn,icn){$(id).innerHTML=arr.map(function(v){return '<button class="chip'+(v===val?" on":"")+'" onclick="'+fn+'('+v+')">'+ic(icn,"")+v+'</button>'}).join("")}
 function live(){return G&&G.status==="active"}
@@ -345,13 +358,22 @@ function jdraw(){var c=jx;if(!c)return;c.clearRect(0,0,JW,JH);var im=JI.bg;
  var m=jm(),pt=Math.min(Math.floor(m/20),Math.max(0,500-spentJ));
  c.fillStyle="rgba(10,6,14,.6)";c.fillRect(8,8,128,42);c.fillStyle="#fff";c.font="800 15px Manrope,sans-serif";c.fillText("▲ "+m+" м",16,26);c.fillStyle="#ffc46b";c.font="800 12px Manrope,sans-serif";c.fillText("+"+pt+" баллов",16,42)}
 function jloop(t){if(!J.run)return;var k=Math.min(2,(t-jl)/16.67||1);jl=t;jstep(k);if(J.run){jdraw();jraf=requestAnimationFrame(jloop)}}
-function jinit(){if(jinited)return;jinited=true;jcv=$("jc");var d=Math.min(window.devicePixelRatio||1,3);jcv.width=JW*d;jcv.height=JH*d;jx=jcv.getContext("2d");jx.setTransform(d,0,0,d,0,0);
- function pt(e){var r=jcv.getBoundingClientRect();jdir=(e.clientX-r.left)<r.width/2?-1:1}
- jcv.addEventListener("pointerdown",function(e){pt(e);e.preventDefault()});jcv.addEventListener("pointermove",function(e){if(e.buttons||e.pointerType==="touch")pt(e)});
- ["pointerup","pointercancel","pointerleave"].forEach(function(n){jcv.addEventListener(n,function(){jdir=0})});
+var jfs=false;
+function jsize(){var d=Math.min(window.devicePixelRatio||1,3);jcv.width=JW*d;jcv.height=JH*d;jcv.style.aspectRatio=JW+"/"+JH;jx.setTransform(d,0,0,d,0,0)}
+function jfit(){var W=$("jwrap"),cs=getComputedStyle(W),w=W.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight),hh=W.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom);
+ JH=jfs?Math.max(480,Math.min(820,Math.round(JW*hh/w))):560;jsize();jreset();jdraw()}
+function jFull(on){if(on===jfs)return;if(!on&&J&&J.run)jend();jfs=on;$("jwrap").classList.toggle("fs",on);
+ try{if(TG){if(on&&TG.requestFullscreen&&!TG.isFullscreen)TG.requestFullscreen();if(!on&&TG.exitFullscreen&&TG.isFullscreen)TG.exitFullscreen()}}catch(e){}
+ setTimeout(function(){jfit();renderJump()},80)}
+function jinit(){if(jinited)return;jinited=true;jcv=$("jc");jx=jcv.getContext("2d");jsize();var W=$("jwrap");
+ function pt(e){var r=W.getBoundingClientRect();jdir=(e.clientX-r.left)<r.width/2?-1:1}
+ W.addEventListener("pointerdown",function(e){if(e.target.closest("button"))return;pt(e);e.preventDefault()});
+ W.addEventListener("pointermove",function(e){if(e.target.closest("button"))return;if(e.buttons||e.pointerType==="touch")pt(e)});
+ ["pointerup","pointercancel","pointerleave"].forEach(function(n){W.addEventListener(n,function(){jdir=0})});
  document.addEventListener("keydown",function(e){if(e.key==="ArrowLeft"||e.key==="a")jdir=-1;if(e.key==="ArrowRight"||e.key==="d")jdir=1});
- document.addEventListener("keyup",function(e){if(e.key==="ArrowLeft"||e.key==="ArrowRight"||e.key==="a"||e.key==="d")jdir=0})}
-function openJump(){showG("j");jinit();if(!J||!J.run){jreset();jdraw()}renderJump();loadJumpTop()}
+ document.addEventListener("keyup",function(e){if(e.key==="ArrowLeft"||e.key==="ArrowRight"||e.key==="a"||e.key==="d")jdir=0});
+ window.addEventListener("resize",function(){if(jfs&&!(J&&J.run))jfit()})}
+function openJump(){showG("j");jinit();jFull(true);if(!J||!J.run){jreset();jdraw()}renderJump();loadJumpTop()}
 async function startJump(){if(busy||(J&&J.run))return;busy=true;var sid;
  try{sid=await rpc("jump_start")}catch(e){fail(e);busy=false;return}
  busy=false;jreset();J.sid=sid;J.run=true;jdir=0;$("jres").textContent="";renderJump();jl=performance.now();jraf=requestAnimationFrame(jloop)}
@@ -359,13 +381,23 @@ async function jend(){if(!J||!J.run)return;J.run=false;cancelAnimationFrame(jraf
  try{var r=await rpc("jump_finish",{p_session:J.sid,p_meters:m});await refresh();loadJumpTop();$("jres").textContent="Высота "+r.meters+" м · +"+r.awarded+" баллов"+(r.awarded<r.earned?" (дневной лимит)":"")}catch(e){fail(e)}
  renderJump()}
 function renderJump(){var run=J&&J.run;$("jused").textContent=fmt(spentJ)+" / 500";$("jbar").style.width=Math.min(100,spentJ/5)+"%";
- var b=$("jbtn");b.disabled=!!run;b.textContent=run?"Играем…":(J&&J.sid?"Играть ещё":"Играть");if(!run&&spentJ>=500&&!$("jres").textContent)$("jres").textContent="Лимит баллов на сегодня выбран, но рекорд для рейтинга засчитывается"}
+ var b=$("jbtn");b.disabled=!!run;b.textContent=run?"Играем…":(J&&J.sid?"Играть ещё":"Играть");if(!run&&spentJ>=500&&!$("jres").textContent)$("jres").textContent="Лимит баллов на сегодня выбран, но рекорд для рейтинга засчитывается";$("jwrap").classList.toggle("run",!!run);$("jbtn2").disabled=!!run;$("jbtn2").textContent=b.textContent;$("jres2").textContent=$("jres").textContent||("Сегодня: "+spentJ+" / 500 баллов");$("jfsbtn").disabled=!!run}
 async function loadJumpTop(){try{var L=await rpc("jump_top"),d=new Date().toLocaleDateString("sv-SE",{timeZone:"Europe/Moscow"}).split("-"),left=new Date(+d[0],+d[1],0).getDate()-(+d[2])+1;
  $("jtopsub").textContent="Лучшая высота за месяц. Топ-1 получит 1000 баллов, до конца месяца "+left+" дн.";
  $("jtop").innerHTML=L.length?L.map(function(r,i){return '<div class="item"><div class="rk"><i>'+(i+1)+'</i>'+(i===0?ic("crown","bob"):"")+'<span class="'+(U&&r.nick===U.nick?"me":"")+'">'+esc(r.nick)+'</span></div><div><b>'+fmt(r.best)+' м</b>'+(U&&U.is_admin?' <button class="x" onclick="rmRec(\''+r.rid+'\')">Убрать</button>':'')+'</div></div>'}).join(""):'<div class="sub">В этом месяце рекордов пока нет</div>';
  var w=await rpc("jump_last_winner");$("jwin").textContent=w.length?"Победитель прошлого месяца: "+w[0].nick+", "+fmt(w[0].best)+" м (+"+fmt(w[0].prize)+" баллов)":""}catch(e){}}
 async function rmRec(id){if(!confirm("Убрать этот рекорд из рейтинга?"))return;try{await rpc("admin_remove_jump_record",{p_rid:id});loadJumpTop()}catch(e){fail(e)}}
 
+/* referrals */
+var RF=null;
+function refLink(){return RF&&BOT?"https://t.me/"+BOT+"?startapp=ref_"+RF.code:""}
+async function loadRef(){try{RF=await rpc("ref_stats");$("rinc").textContent=fmt(RF.income);
+ $("rfr").innerHTML=RF.friends.length?RF.friends.map(function(f){return '<div class="item"><div><b>'+esc(f.nick)+'</b><small>'+(f.paid?'Засчитан · принёс '+fmt(f.given)+' баллов':'Заработал '+f.progress+' / 500 · дней '+f.days+' / 3')+'</small></div><span class="tag">'+(f.paid?"✓":"…")+'</span></div>'}).join(""):'<div class="sub">Пока никого. Отправь ссылку другу.</div>'}catch(e){}}
+function shareRef(){var l=refLink();if(!l){toast("Ссылка пока недоступна");return}
+ var u="https://t.me/share/url?url="+encodeURIComponent(l)+"&text="+encodeURIComponent("Залетай в VALORANT PARTY: играй и меняй баллы на VP!");
+ if(TG&&TG.openTelegramLink)TG.openTelegramLink(u);else window.open(u,"_blank")}
+function copyRef(){var l=refLink();if(!l){toast("Ссылка пока недоступна");return}
+ try{navigator.clipboard.writeText(l).then(function(){toast("Ссылка скопирована")},function(){prompt("Скопируй ссылку",l)})}catch(e){prompt("Скопируй ссылку",l)}}
 /* render + start */
 function render(){if(!U)return;$("bal").textContent=fmt(U.balance);renderDaily();renderGame();renderRoul();renderJump();renderShop();renderMe()}
 async function beat(){try{$("onl").textContent=await rpc("heartbeat")}catch(e){}}
