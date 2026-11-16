@@ -129,6 +129,12 @@ input{font-family:var(--b)}
 .gate h2{font-size:22px;margin-bottom:10px}
 .gate p{color:var(--mut);line-height:1.5;margin:0 0 24px;font-size:14px}
 .gerr{color:var(--gold);font-size:13px;font-weight:700;margin-top:16px;animation:rise .3s both}
+.mt{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:10px}
+.mtime{font-size:11px;color:var(--mut);margin-bottom:4px;font-weight:700}
+.tm{display:flex;justify-content:space-between;align-items:center;width:100%;background:none;border:0;border-bottom:1px solid var(--line);color:var(--tx);padding:10px 2px;font-weight:700;font-size:14px;cursor:pointer;text-align:left}
+.tm:last-of-type{border-bottom:0}.tm.win{color:var(--ok)}.tm b{font-family:var(--d);font-size:13px}
+.tsheet{display:none;position:fixed;left:0;right:0;bottom:0;background:var(--panel);border-top:1px solid var(--red);border-radius:22px 22px 0 0;padding:20px 20px calc(24px + env(safe-area-inset-bottom,0px));z-index:12;max-height:75vh;overflow:auto;animation:rise .25s both}
+select.inp{appearance:none}
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
 </style>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -187,6 +193,13 @@ input{font-family:var(--b)}
   <div class="prods" id="shopList"></div>
 </section>
 
+<section class="page" id="p-tour">
+  <div id="tList"><div class="card" style="margin-top:0"><h2><i data-i="flag" data-a="bob"></i>Турниры</h2><div class="sub">Всё время указано по Москве (МСК)</div><div class="row" id="tfmt" style="margin:0"></div></div>
+    <div id="tadm"></div><div class="card adm" id="twiz" style="display:none"></div><div id="tl"></div>
+    <div class="card"><h2><i data-i="crown" data-a="bob"></i>Чемпионы</h2><div class="sub">Команды по числу выигранных турниров</div><div id="ttop"></div></div></div>
+  <div id="tDet" style="display:none"></div>
+</section>
+
 <section class="page" id="p-top"><div class="card" style="margin-top:0"><h2><i data-i="trophy" data-a="pls"></i>Топ игроков</h2><div class="sub" id="topsub"></div><div id="topList"></div></div></section>
 
 <section class="page" id="p-me">
@@ -208,8 +221,10 @@ input{font-family:var(--b)}
   <button data-p="games"><i data-i="game" data-a="wig"></i>Игры</button>
   <button data-p="shop"><i data-i="cart" data-a="bob"></i>Магазин</button>
   <button data-p="top"><i data-i="trophy" data-a="pls"></i>Рейтинг</button>
+  <button data-p="tour"><i data-i="flag" data-a="bob"></i>Турниры</button>
   <button data-p="me"><i data-i="user" data-a="bob"></i>Профиль</button>
 </nav>
+<div class="tsheet" id="tsheet"></div>
 <script>
 var SB="https://vupypyzamanapkafytoq.supabase.co",KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1cHlweXphbWFuYXBrYWZ5dG9xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQxNzIwMDcsImV4cCI6MjEwOTc0ODAwN30.72_30VCo5p_AKa84P3bqyeVc97rDqL0mHtqYvVUMA7Y";
 var BOT="",TG=window.Telegram&&window.Telegram.WebApp,tok=null,U=null,G=null,spentM=0,spentR=0,orders=[],busy=false;
@@ -233,7 +248,7 @@ function rpc(n,a){return api("/rest/v1/rpc/"+n,{method:"POST",body:a||{}})}
 var P={home:'<path d="M3 11l9-8 9 8v10h-6v-6H9v6H3z"/>',game:'<path d="M6 8h12a4 4 0 014 4v3a3 3 0 01-5.2 2L15 15H9l-1.8 2A3 3 0 012 15v-3a4 4 0 014-4z"/><path d="M8 10v4M6 12h4M16 11h.01M18 13h.01"/>',
 cart:'<path d="M3 4h2l2.5 11h10L20 7H6.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/>',trophy:'<path d="M7 4h10v5a5 5 0 01-10 0zM7 6H4v2a3 3 0 003 3M17 6h3v2a3 3 0 01-3 3M12 14v4M8 21h8"/>',
 user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/>',gift:'<rect x="3" y="9" width="18" height="4" rx="1"/><path d="M5 13v8h14v-8M12 9v12M12 9S9 3 7.5 5 12 9 12 9zM12 9s3-6 4.5-4S12 9 12 9z"/>',
-bomb:'<circle cx="11" cy="14" r="7"/><path d="M16 8l3-3M19 2v3M17 4h4"/>',roulette:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/>',jump:'<path d="M12 19V5M6 11l6-6 6 6M5 22h14"/>',users:'<circle cx="9" cy="8" r="3.5"/><path d="M2 21a7 7 0 0114 0M17 4.5a3.5 3.5 0 010 7M19 21a6 6 0 00-3-5.2"/>',mega:'<path d="M3 11v2a1 1 0 001 1h2l7 4V6L6 10H4a1 1 0 00-1 1zM16 8a5 5 0 010 8M19 5a9 9 0 010 14"/>',gem:'<path d="M6 3h12l4 6-10 12L2 9zM2 9h20M9 3l-2 6 5 12 5-12-2-6"/>',
+bomb:'<circle cx="11" cy="14" r="7"/><path d="M16 8l3-3M19 2v3M17 4h4"/>',roulette:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/>',jump:'<path d="M12 19V5M6 11l6-6 6 6M5 22h14"/>',users:'<circle cx="9" cy="8" r="3.5"/><path d="M2 21a7 7 0 0114 0M17 4.5a3.5 3.5 0 010 7M19 21a6 6 0 00-3-5.2"/>',mega:'<path d="M3 11v2a1 1 0 001 1h2l7 4V6L6 10H4a1 1 0 00-1 1zM16 8a5 5 0 010 8M19 5a9 9 0 010 14"/>',flag:'<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',gem:'<path d="M6 3h12l4 6-10 12L2 9zM2 9h20M9 3l-2 6 5 12 5-12-2-6"/>',
 star:'<path d="M12 2l3 7 7 .5-5 5 1.5 7.5-6.5-4-6.5 4L7 14.5l-5-5L9 9z" fill="currentColor"/>',lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/>',back:'<path d="M15 5l-7 7 7 7"/>',crown:'<path d="M3 8l4 4 5-7 5 7 4-4-2 11H5z"/>'};
 function ic(n,a){return '<i class="ic a-'+(a||"")+'"><svg viewBox="0 0 24 24">'+P[n]+'</svg></i>'}
 function icons(){document.querySelectorAll("i[data-i]").forEach(function(e){e.outerHTML=ic(e.dataset.i,e.dataset.a)})}
@@ -241,7 +256,7 @@ function icons(){document.querySelectorAll("i[data-i]").forEach(function(e){e.ou
 /* nav */
 function go(p){document.querySelectorAll(".page").forEach(function(e){e.classList.remove("on")});$("p-"+p).classList.add("on");
  document.querySelectorAll("nav button").forEach(function(b){b.classList.toggle("on",b.dataset.p===p)});
- if(J&&J.run)jend();if(p==="games")closeGame();if(p==="top")loadTop();if(p==="me"){loadOrders();loadAdmin();loadRef()}render();window.scrollTo(0,0)}
+ if(J&&J.run)jend();if(p==="games")closeGame();if(p==="top")loadTop();if(p==="tour"){trOpen=null;loadTour()}if(p==="me"){loadOrders();loadAdmin();loadRef()}render();window.scrollTo(0,0)}
 $("nav").onclick=function(e){var b=e.target.closest("button");if(b)go(b.dataset.p)};
 async function refresh(){var r=await api("/rest/v1/profiles?select=*");U=r[0];
  var l=await api("/rest/v1/game_limits?select=game,spent&day=eq."+msk());spentM=0;spentR=0;spentJ=0;l.forEach(function(x){if(x.game==="roulette")spentR=x.spent;else if(x.game==="jump")spentJ=x.spent;else spentM=x.spent});render()}
@@ -416,6 +431,69 @@ function showGate(again){var o=$("ov"),L=(GATE&&GATE.list)||[],many=L.length>1;o
  '<button class="btn ghost" style="margin-top:6px" onclick="retryGate()">Я подписался</button>'+(again?'<div class="gerr">Подписка пока не найдена. Подпишись и нажми ещё раз</div>':'')+'</div>'}
 function openCh(i){var c=GATE&&GATE.list&&GATE.list[i];if(!c)return;if(TG&&TG.openTelegramLink)TG.openTelegramLink(c.link);else window.open(c.link,"_blank")}
 function retryGate(){loadingOv();boot(true)}
+/* tournaments */
+var TR=[],TOP=[],trf=0,trOpen=null,WZ=null,RANKS=["","Iron","Bronze","Silver","Gold","Platinum","Diamond","Ascendant","Immortal","Radiant"],PT=[["none","Ничего"],["points","Баллы сайта"],["vp","VP"],["money","Деньги"]];
+function fmtMsk(t){return new Date(t).toLocaleString("ru-RU",{timeZone:"Europe/Moscow",day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"})+" МСК"}
+function mskIn(t){return t?new Date(t).toLocaleString("sv-SE",{timeZone:"Europe/Moscow"}).slice(0,16).replace(" ","T"):""}
+function prizeTxt(t){return t.prize_type==="points"?(t.prize_amount||"")+" баллов сайта":t.prize_type==="vp"?(t.prize_amount||"")+" VP":t.prize_type==="money"?(t.prize_amount||"Денежный приз"):"без приза"}
+function tmOf(t,id){return t.teams.filter(function(x){return x.id===id})[0]}
+async function loadTour(){try{TR=await api("/rest/v1/tournaments?select=*,teams(*),matches(*)&order=starts_at.desc");TOP=await rpc("tournament_top");renderTour()}catch(e){}}
+function setTrf(v){trf=v;renderTour()}
+function openTour(id){trOpen=id;renderTour();window.scrollTo(0,0)}
+function closeTour(){trOpen=null;hideTeam();renderTour()}
+function renderTour(){if(!$("tl"))return;$("tList").style.display=trOpen?"none":"block";$("tDet").style.display=trOpen?"block":"none";
+ if(trOpen){renderDetail();return}
+ $("tfmt").innerHTML=[0,1,2,3,4,5].map(function(f){return '<button class="chip'+(trf===f?" on":"")+'" onclick="setTrf('+f+')">'+(f?f+"×"+f:"Все")+'</button>'}).join("");
+ $("tadm").innerHTML=U&&U.is_admin&&!WZ?'<button class="btn" style="margin-top:14px" onclick="openWiz()">Создать турнир</button>':"";
+ var now=Date.now(),L=TR.filter(function(t){return !trf||t.format===trf});
+ L.sort(function(a,b){var fa=a.status==="finished",fb=b.status==="finished";if(fa!==fb)return fa?1:-1;return fa?new Date(b.starts_at)-new Date(a.starts_at):new Date(a.starts_at)-new Date(b.starts_at)});
+ $("tl").innerHTML=L.length?'<div class="glist">'+L.map(function(t){var fin=t.status==="finished",w=fin&&t.winner_team?tmOf(t,t.winner_team):null,live=!fin&&new Date(t.starts_at)<now;
+  return '<button class="gcard" onclick="openTour(\''+t.id+'\')"><div class="gi" style="font-size:18px;font-family:var(--d);font-weight:800">'+t.format+'×'+t.format+'</div><div><h3>'+esc(t.name)+'</h3><small>'+fmtMsk(t.starts_at)+'<br>Приз: '+esc(prizeTxt(t))+'</small><span class="pill">'+(fin?"Завершён"+(w?" · "+esc(w.name):""):live?"Идёт сейчас":"Скоро")+'</span></div></button>'}).join("")+'</div>':'<div class="card"><div class="sub" style="margin:0">Турниров пока нет</div></div>';
+ $("ttop").innerHTML=TOP.length?TOP.map(function(r,i){return '<div class="item"><div class="rk"><i>'+(i+1)+'</i>'+(i===0?ic("crown","bob"):"")+'<span>'+esc(r.team)+'</span></div><b>'+r.wins+' '+(r.wins===1?"победа":r.wins<5?"победы":"побед")+'</b></div>'}).join(""):'<div class="sub">Пока нет победителей</div>'}
+function rname(r,m){return r===m?(m===1?"Финал":"Финал · до 2 побед"):r===m-1?"Полуфинал":"Четвертьфинал"}
+function renderDetail(){var t=TR.filter(function(x){return x.id===trOpen})[0];if(!t){trOpen=null;renderTour();return}
+ var R={},mx=1;t.matches.forEach(function(m){(R[m.round]=R[m.round]||[]).push(m);if(m.round>mx)mx=m.round});
+ var adm=U&&U.is_admin,h='<button class="back" onclick="closeTour()">'+ic("back","")+'Все турниры</button><div class="card"><h2>'+esc(t.name)+'</h2><div class="sub">'+t.format+' на '+t.format+' · '+fmtMsk(t.starts_at)+'<br>Приз: '+esc(prizeTxt(t))+(t.status==="finished"?"<br>Турнир завершён":"")+'<br>Все время указано по Москве (МСК). Нажми на команду, чтобы увидеть состав.</div>';
+ for(var r=1;r<=mx;r++){h+='<div class="lbl" style="margin-top:14px">'+rname(r,mx)+'</div>';
+  R[r].sort(function(a,b){return a.slot-b.slot}).forEach(function(m){var A=m.team_a&&tmOf(t,m.team_a),B=m.team_b&&tmOf(t,m.team_b);
+   function row(tm,sc,win,id){return tm?'<button class="tm'+(win?" win":"")+'" onclick="showTeam(\''+tm.id+'\',\''+m.id+'\')"><span>'+esc(tm.name)+'</span><b>'+sc+'</b></button>':'<div class="tm" style="color:var(--mut);cursor:default"><span>Определится</span></div>'}
+   h+='<div class="mt"><div class="mtime">'+(m.starts_at?fmtMsk(m.starts_at):"Время не указано")+(m.best_of>1?" · до "+(m.best_of/2+.5)+" побед":"")+'</div>'+row(A,m.score_a,m.winner&&m.winner===m.team_a)+row(B,m.score_b,m.winner&&m.winner===m.team_b)+
+   (adm&&A&&B?'<div class="row" style="margin:8px 0 0"><input class="inp s" style="flex:0 0 52px" type="number" min="0" id="sa'+m.id+'" value="'+m.score_a+'"><input class="inp s" style="flex:0 0 52px" type="number" min="0" id="sb'+m.id+'" value="'+m.score_b+'"><input class="inp" type="datetime-local" id="st'+m.id+'" value="'+mskIn(m.starts_at)+'"><button class="chip" style="flex:0 0 52px" onclick="saveM(\''+m.id+'\')">OK</button></div>':(adm?'<div class="row" style="margin:8px 0 0"><input class="inp" type="datetime-local" id="st'+m.id+'" value="'+mskIn(m.starts_at)+'"><button class="chip" style="flex:0 0 52px" onclick="saveM(\''+m.id+'\')">OK</button></div>':""))+'</div>'})}
+ h+=(adm?'<button class="x" style="margin-top:14px" onclick="delTour(\''+t.id+'\')">Удалить турнир</button>':"")+'</div>';$("tDet").innerHTML=h}
+function showTeam(tid,mid){var t=TR.filter(function(x){return x.id===trOpen})[0],tm=tmOf(t,tid),m=t.matches.filter(function(x){return x.id===mid})[0];
+ $("tsheet").innerHTML='<h2 style="font-size:18px;margin-bottom:4px">'+esc(tm.name)+'</h2><div class="sub">'+t.format+' на '+t.format+(m&&m.starts_at?' · матч: '+fmtMsk(m.starts_at):'')+'</div>'+
+ (tm.players.length?tm.players.map(function(p){return '<div class="item"><b>'+esc(p.nick)+'</b><span class="tag">'+esc(p.rank||"ранг не указан")+'</span></div>'}).join(""):'<div class="sub">Состав пока не указан</div>')+'<button class="btn ghost" style="margin-top:14px" onclick="hideTeam()">Закрыть</button>';$("tsheet").style.display="block"}
+function hideTeam(){$("tsheet").style.display="none"}
+async function saveM(id){var a=+($("sa"+id)?$("sa"+id).value:0)||0,b=+($("sb"+id)?$("sb"+id).value:0)||0,s=$("st"+id).value;
+ try{await rpc("admin_set_match",{p_match:id,p_a:a,p_b:b,p_start:s?s+":00+03:00":null});await loadTour();toast("Сохранено")}catch(e){fail(e)}}
+async function delTour(id){if(!confirm("Удалить турнир?"))return;try{await rpc("admin_delete_tournament",{p_id:id});trOpen=null;await loadTour()}catch(e){fail(e)}}
+/* tournament wizard (admin) */
+function wteams(){var t=[],i;for(i=0;i<WZ.n;i++){var o=WZ.teams[i]||{name:"",players:[]};while(o.players.length<WZ.fmt)o.players.push({nick:"",rank:""});o.players=o.players.slice(0,WZ.fmt);t.push(o)}WZ.teams=t;WZ.pairs=[];for(i=0;i<WZ.n;i+=2)WZ.pairs.push([i,i+1])}
+function openWiz(){WZ={s:1,name:"",fmt:5,dt:"",pt:"none",amt:"",n:4,teams:[],pairs:[]};wteams();renderWiz();$("twiz").style.display="block";renderTour();$("twiz").scrollIntoView()}
+function wclose(){WZ=null;$("twiz").style.display="none";renderTour()}
+function tchips(arr,cur,fn){return arr.map(function(v){return '<button class="chip'+(cur===v?" on":"")+'" onclick="'+fn+'('+v+')">'+(typeof v==="number"&&fn==="wFmt"?v+"×"+v:v)+'</button>'}).join("")}
+function wFmt(v){WZ.fmt=v;wteams();renderWiz()}function wN(v){WZ.n=v;wteams();renderWiz()}function wPt(v){WZ.pt=v;renderWiz()}
+function renderWiz(){var s=WZ.s,T=["Основное","Команды","Сетка","Проверка"][s-1],h='<h2>Новый турнир</h2><div class="sub">Шаг '+s+' из 4 · '+T+'</div>',i,j;
+ if(s===1){h+='<div class="lbl">Название турнира</div><input class="inp" style="width:100%;margin-bottom:12px" maxlength="60" value="'+esc(WZ.name)+'" oninput="WZ.name=this.value">'+
+  '<div class="lbl">Формат</div><div class="row">'+tchips([1,2,3,4,5],WZ.fmt,"wFmt")+'</div>'+
+  '<div class="lbl">Дата и время начала (по МСК)</div><input class="inp" style="width:100%;margin-bottom:12px" type="datetime-local" value="'+WZ.dt+'" oninput="WZ.dt=this.value">'+
+  '<div class="lbl">Призовой фонд</div><div class="row" style="flex-wrap:wrap">'+PT.map(function(p){return '<button class="chip'+(WZ.pt===p[0]?" on":"")+'" onclick="wPt(\''+p[0]+'\')">'+p[1]+'</button>'}).join("")+'</div>'+
+  (WZ.pt!=="none"?'<input class="inp" style="width:100%" maxlength="40" placeholder="'+(WZ.pt==="money"?"Например: 5000 ₽":"Сколько")+'" value="'+esc(WZ.amt)+'" oninput="WZ.amt=this.value">':"")}
+ if(s===2){h+='<div class="lbl">Сколько команд</div><div class="row">'+tchips([2,4,8],WZ.n,"wN")+'</div>';
+  WZ.teams.forEach(function(t,i){h+='<div class="mt"><input class="inp" style="width:100%" maxlength="30" placeholder="Название команды '+(i+1)+'" value="'+esc(t.name)+'" oninput="WZ.teams['+i+'].name=this.value">';
+   t.players.forEach(function(p,j){h+='<div class="row" style="margin:6px 0 0"><input class="inp" maxlength="24" placeholder="Ник игрока '+(j+1)+'" value="'+esc(p.nick)+'" oninput="WZ.teams['+i+'].players['+j+'].nick=this.value"><select class="inp" style="flex:0 0 118px" onchange="WZ.teams['+i+'].players['+j+'].rank=this.value">'+RANKS.map(function(r){return '<option value="'+r+'"'+(p.rank===r?" selected":"")+'>'+(r||"Ранг")+'</option>'}).join("")+'</select></div>'});h+='</div>'})}
+ if(s===3){h+='<div class="sub">Выбери, кто с кем играет в первом раунде. Дальше сетка заполнится сама по победителям.</div>';
+  WZ.pairs.forEach(function(pr,k){h+='<div class="lbl">Матч '+(k+1)+'</div><div class="row">'+[0,1].map(function(side){return '<select class="inp" onchange="WZ.pairs['+k+']['+side+']=+this.value">'+WZ.teams.map(function(t,i){return '<option value="'+i+'"'+(pr[side]===i?" selected":"")+'>'+esc(t.name||"Команда "+(i+1))+'</option>'}).join("")+'</select>'}).join("")+'</div>'})}
+ if(s===4){h+='<div class="item" style="display:block"><b>'+esc(WZ.name)+'</b><small>'+WZ.fmt+' на '+WZ.fmt+' · '+WZ.n+' команд<br>'+fmtMsk(WZ.dt+":00+03:00")+'<br>Приз: '+esc(prizeTxt({prize_type:WZ.pt,prize_amount:WZ.amt}))+'</small></div>'+WZ.pairs.map(function(pr,k){return '<div class="item"><span>Матч '+(k+1)+'</span><b>'+esc(WZ.teams[pr[0]].name)+' vs '+esc(WZ.teams[pr[1]].name)+'</b></div>'}).join("")+'<div class="sub" style="margin-top:10px">Полуфиналы и раунды до финала играются до 1 победы, финал до 2.</div>'}
+ h+='<div class="row" style="margin:14px 0 0">'+(s>1?'<button class="chip" onclick="wgo(-1)">Назад</button>':'<button class="chip" onclick="wclose()">Отмена</button>')+(s<4?'<button class="chip on" onclick="wgo(1)">Далее</button>':'<button class="chip on" onclick="wcreate()">Создать турнир</button>')+'</div>';$("twiz").innerHTML=h}
+function wgo(d){if(d>0){var s=WZ.s;
+  if(s===1&&(!WZ.name.trim()||!WZ.dt)){toast("Укажи название и дату");return}
+  if(s===2&&WZ.teams.some(function(t){return !t.name.trim()})){toast("Назови все команды");return}
+  if(s===3){var u={};WZ.pairs.forEach(function(p){u[p[0]]=1;u[p[1]]=1});if(Object.keys(u).length!==WZ.n){toast("Каждая команда должна играть ровно один раз");return}}}
+ WZ.s+=d;renderWiz();$("twiz").scrollIntoView()}
+async function wcreate(){if(busy)return;busy=true;
+ var pl={name:WZ.name.trim(),format:WZ.fmt,starts_at:WZ.dt+":00+03:00",prize_type:WZ.pt,prize_amount:WZ.pt==="none"?"":WZ.amt,teams:WZ.teams.map(function(t){return {name:t.name.trim(),players:t.players.filter(function(p){return p.nick.trim()}).map(function(p){return {nick:p.nick.trim(),rank:p.rank}})}}),pairs:WZ.pairs};
+ try{await rpc("admin_create_tournament",{p:pl});WZ=null;$("twiz").style.display="none";toast("Турнир создан");await loadTour()}catch(e){fail(e)}busy=false}
 /* render + start */
 function render(){if(!U)return;$("bal").textContent=fmt(U.balance);renderDaily();renderGame();renderRoul();renderJump();renderShop();renderMe()}
 async function beat(){try{$("onl").textContent=await rpc("heartbeat")}catch(e){}}
