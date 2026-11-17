@@ -115,7 +115,7 @@ input{font-family:var(--b)}
 .jwrap .jc{margin:0}
 .jwrap.fs{position:fixed;inset:0;z-index:8;max-width:none;margin:0;background:#0b080e;display:flex;align-items:center;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 50px) 0 env(safe-area-inset-bottom,0px)}
 .jwrap.fs .jc{height:100%;width:auto;max-width:100%;border-radius:0;border:0}
-.jx{display:none;position:absolute;top:calc(env(safe-area-inset-top,0px) + 8px);right:12px;width:40px;height:40px;border-radius:12px;background:rgba(10,6,14,.75);border:1px solid var(--line);color:#fff;font-size:18px;place-items:center;cursor:pointer;z-index:3}
+.jx{display:none;position:absolute;top:calc(env(safe-area-inset-top,0px) + 58px);right:12px;height:38px;padding:0 14px;border-radius:12px;background:rgba(10,6,14,.75);border:1px solid var(--line);color:#fff;font-size:13px;font-weight:800;place-items:center;cursor:pointer;z-index:3}
 .jwrap.fs .jx{display:grid}
 .jfsui{display:none;position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 34px);padding:0 28px;text-align:center;z-index:2}
 .jwrap.fs:not(.run) .jfsui{display:block}
@@ -172,7 +172,7 @@ select.inp{appearance:none}
     <button class="back" onclick="closeGame()"><i data-i="back" data-a=""></i>Все игры</button>
     <div class="card"><h2><i data-i="jump" data-a="bob"></i>Valorant Jump</h2><div class="sub">Прыгай по платформам и поднимайся выше. Держи палец на левой или правой половине экрана, чтобы двигаться. 20 метров = 1 балл, до 500 баллов в день. Синие платформы двигаются, коричневые ломаются, красная пружина подбрасывает выше.</div>
     <div class="stat"><span>Сегодня заработано</span><span id="jused"></span></div><div class="bar"><i id="jbar"></i></div>
-    <div class="jwrap" id="jwrap"><canvas id="jc" class="jc"></canvas><button class="jx" onclick="jFull(false)">✕</button><div class="jfsui"><div class="res" id="jres2"></div><button class="btn" id="jbtn2" onclick="startJump()">Играть</button></div></div><div class="sub" id="jres" style="text-align:center;margin:10px 0 0"></div>
+    <div class="jwrap" id="jwrap"><canvas id="jc" class="jc"></canvas><button class="jx" onclick="closeGame()">✕ Меню</button><div class="jfsui"><div class="res" id="jres2"></div><button class="btn" id="jbtn2" onclick="startJump()">Играть</button><button class="btn ghost" style="margin-top:10px" onclick="closeGame()">В меню игр</button></div></div><div class="sub" id="jres" style="text-align:center;margin:10px 0 0"></div>
     <button class="btn" id="jbtn" onclick="startJump()" style="margin-top:10px">Играть</button>
     <button class="btn ghost" id="jfsbtn" onclick="jFull(true)" style="margin-top:10px">На весь экран</button></div>
     <div class="card"><h2><i data-i="trophy" data-a="pls"></i>Рекорды месяца</h2><div class="sub" id="jtopsub"></div><div id="jtop"></div><div class="sub" id="jwin" style="margin:12px 0 0"></div></div>
@@ -363,7 +363,7 @@ function jstep(k){var p=J.p;
  var prev=p.y+27;p.vy+=.35*k;p.y+=p.vy*k;var feet=p.y+27;
  J.pl.forEach(function(q){if(q.t===1){q.x+=q.dx*k;if(q.x<0||q.x>JW-q.w)q.dx*=-1}
   if(q.fall){q.y+=6*k;return}
-  if(p.vy>0&&prev<=q.y+4&&feet>=q.y&&p.x+12>q.x&&p.x-12<q.x+q.w){if(q.t===2)q.fall=true;else p.vy=q.s?-17.5:-11}});
+  if(p.vy>0&&prev<=q.y+4&&feet>=q.y&&p.x+12>q.x&&p.x-12<q.x+q.w){if(q.t===2){q.fall=true;p.vy=-11}else p.vy=q.s?-17.5:-11}});
  if(p.y<J.max)J.max=p.y;if(p.y-J.cy<JH*.42)J.cy=p.y-JH*.42;jgen();
  J.pl=J.pl.filter(function(q){return q.y<J.cy+JH+80});if(p.y-J.cy>JH+60)jend()}
 function jplat(c,q,y){var b=["#3b2a30","#1f4b5c","#6b4a35"][q.t],tp=["#ff3d5a","#59d7ff","#a8845f"][q.t];c.save();
