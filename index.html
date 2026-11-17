@@ -437,7 +437,7 @@ function fmtMsk(t){return new Date(t).toLocaleString("ru-RU",{timeZone:"Europe/M
 function mskIn(t){return t?new Date(t).toLocaleString("sv-SE",{timeZone:"Europe/Moscow"}).slice(0,16).replace(" ","T"):""}
 function prizeTxt(t){return t.prize_type==="points"?(t.prize_amount||"")+" баллов сайта":t.prize_type==="vp"?(t.prize_amount||"")+" VP":t.prize_type==="money"?(t.prize_amount||"Денежный приз"):"без приза"}
 function tmOf(t,id){return t.teams.filter(function(x){return x.id===id})[0]}
-async function loadTour(){try{TR=await api("/rest/v1/tournaments?select=*,teams(id,tournament_id,name,players),matches(*)&order=starts_at.desc");TOP=await rpc("tournament_top");renderTour()}catch(e){}}
+async function loadTour(){try{TR=await api("/rest/v1/tournaments?select=*,teams!tournament_id(id,tournament_id,name,players),matches(*)&order=starts_at.desc");TOP=await rpc("tournament_top");renderTour()}catch(e){toast("Турниры: "+e.message)}}
 function setTrf(v){trf=v;renderTour()}
 function openTour(id){trOpen=id;renderTour();window.scrollTo(0,0)}
 function closeTour(){trOpen=null;hideTeam();renderTour()}
