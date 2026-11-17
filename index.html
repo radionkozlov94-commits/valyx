@@ -135,6 +135,10 @@ input{font-family:var(--b)}
 .tm:last-of-type{border-bottom:0}.tm.win{color:var(--ok)}.tm b{font-family:var(--d);font-size:13px}
 .tsheet{display:none;position:fixed;left:0;right:0;bottom:0;background:var(--panel);border-top:1px solid var(--red);border-radius:22px 22px 0 0;padding:20px 20px calc(24px + env(safe-area-inset-bottom,0px));z-index:12;max-height:75vh;overflow:auto;animation:rise .25s both}
 select.inp{appearance:none}
+@keyframes dealin{from{transform:translateY(-34px) rotate(-12deg);opacity:0}}
+.hand{display:flex;min-height:72px;padding-left:4px;margin-top:6px}
+.pc{width:46px;height:66px;border-radius:9px;background:#f6eff1;color:#161018;display:grid;place-items:center;font-weight:800;font-size:16px;margin-right:-12px;box-shadow:0 3px 10px #000a;animation:dealin .35s both;flex:0 0 auto}
+.pc.r{color:#c2203f}.pc.b{background:repeating-linear-gradient(45deg,#7d1230,#7d1230 6px,#a01a40 6px,#a01a40 12px);border:2px solid #f6eff1}
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
 </style>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -145,6 +149,7 @@ select.inp{appearance:none}
 <div class="top"><div class="logo">VALORANT<br><span>PARTY</span></div><div style="display:grid;gap:6px;justify-items:end"><div class="online"><i></i><span id="onl">1</span> онлайн</div><div class="bal"><i data-i="star" data-a="spn"></i><span id="bal">0</span> <span style="color:var(--mut);font-size:11px">VALYX</span></div></div></div>
 <main>
 <section class="page on" id="p-home">
+  <div class="card" id="hTour" style="margin:0 0 14px;border-color:var(--red);box-shadow:0 0 26px #ff3d5a26"><h2><i data-i="flag" data-a="bob"></i>Турниры</h2><div id="hTourBody"><div class="sub" style="margin:0">Загрузка…</div></div></div>
   <div class="hero"><div class="blade"></div><div class="blade b2"></div><h1>Зарабатывай <em>VALYX Coins</em> и получай VP</h1><p>Заходи каждый день, играй в мини-игры и обменивай баллы на VP для Valorant.</p><button class="btn" onclick="go('games')"><i data-i="game" data-a="wig"></i>Начать играть</button></div>
   <div class="card"><h2><i data-i="gift" data-a="bob"></i>Ежедневная награда</h2><div class="sub" id="dsub"></div><div class="days" id="days"></div><button class="btn" id="dbtn" onclick="claim()">Забрать</button></div>
   <div class="card"><h2><i data-i="cart" data-a="bob"></i>Покупай VP за баллы</h2><div style="height:10px"></div><button class="btn ghost" onclick="go('shop')">В магазин</button></div>
@@ -156,6 +161,7 @@ select.inp{appearance:none}
       <button class="gcard" onclick="openGame()"><div class="gi"><i data-i="bomb" data-a="pls"></i></div><div><h3>Сапёр</h3><small>Открывай клетки, расти ставку и вовремя забирай выигрыш</small><span class="pill">Играть</span></div></button>
       <button class="gcard" onclick="openJump()"><div class="gi"><i data-i="jump" data-a="bob"></i></div><div><h3>Valorant Jump</h3><small>Прыгай по платформам вверх. До 500 баллов в день</small><span class="pill">Играть</span></div></button>
       <button class="gcard" onclick="openRoul()" style="animation-delay:.08s"><div class="gi"><i data-i="roulette" data-a="rot"></i></div><div><h3>Рулетка</h3><small>Красное, чёрное или зелёное. Колесо крутится, цвет выпадает случайно</small><span class="pill">Играть</span></div></button>
+      <button class="gcard" onclick="openBJ()" style="animation-delay:.12s"><div class="gi"><i data-i="cards" data-a="bob"></i></div><div><h3>Блэкджек</h3><small>Играй против дилера: набери 21 и обыграй бота. Лимит 1000 баллов в день</small><span class="pill">Играть</span></div></button>
       <div class="gcard lock"><div class="gi"><i data-i="lock" data-a=""></i></div><div><h3>Скоро новая игра</h3><small>Мы уже работаем над следующей</small><span class="pill">Скоро</span></div></div>
     </div></div>
   <div id="gView" style="display:none">
@@ -176,6 +182,17 @@ select.inp{appearance:none}
     <button class="btn" id="jbtn" onclick="startJump()" style="margin-top:10px">Играть</button>
     <button class="btn ghost" id="jfsbtn" onclick="jFull(true)" style="margin-top:10px">На весь экран</button></div>
     <div class="card"><h2><i data-i="trophy" data-a="pls"></i>Рекорды месяца</h2><div class="sub" id="jtopsub"></div><div id="jtop"></div><div class="sub" id="jwin" style="margin:12px 0 0"></div></div>
+  </div>
+  <div id="bView" style="display:none">
+    <button class="back" onclick="closeGame()"><i data-i="back" data-a=""></i>Все игры</button>
+    <div class="card"><h2><i data-i="cards" data-a="bob"></i>Блэкджек</h2><div class="sub">Набери 21 или больше, чем у дилера, но не перебери. Блэкджек платит 3 к 2, победа x2. Дилер берёт карты, пока не наберёт 17.</div>
+    <div class="stat"><span>Дилер</span><span id="bdt"></span></div><div class="hand" id="bdealer"></div>
+    <div class="stat" style="margin-top:14px"><span>Ты</span><span id="bpt"></span></div><div class="hand" id="bplayer"></div>
+    <div class="sub" id="bres" style="text-align:center;font-weight:800;color:var(--gold);margin:14px 0 6px;min-height:20px"></div>
+    <div class="row" id="bact" style="display:none;margin:0 0 10px"><button class="btn" onclick="bjHit()">Ещё</button><button class="btn ghost" onclick="bjStand()">Хватит</button></div>
+    <div class="lbl">Ставка</div><div class="row" id="bbets"></div>
+    <div class="stat"><span>Лимит на сегодня</span><span id="blim"></span></div><div class="bar"><i id="blimbar"></i></div>
+    <button class="btn" id="bdeal" onclick="bjDeal()">Раздать</button></div>
   </div>
   <div id="rView" style="display:none">
     <button class="back" onclick="closeGame()"><i data-i="back" data-a=""></i>Все игры</button>
@@ -221,7 +238,6 @@ select.inp{appearance:none}
   <button data-p="games"><i data-i="game" data-a="wig"></i>Игры</button>
   <button data-p="shop"><i data-i="cart" data-a="bob"></i>Магазин</button>
   <button data-p="top"><i data-i="trophy" data-a="pls"></i>Рейтинг</button>
-  <button data-p="tour"><i data-i="flag" data-a="bob"></i>Турниры</button>
   <button data-p="me"><i data-i="user" data-a="bob"></i>Профиль</button>
 </nav>
 <div class="tsheet" id="tsheet"></div>
@@ -248,7 +264,7 @@ function rpc(n,a){return api("/rest/v1/rpc/"+n,{method:"POST",body:a||{}})}
 var P={home:'<path d="M3 11l9-8 9 8v10h-6v-6H9v6H3z"/>',game:'<path d="M6 8h12a4 4 0 014 4v3a3 3 0 01-5.2 2L15 15H9l-1.8 2A3 3 0 012 15v-3a4 4 0 014-4z"/><path d="M8 10v4M6 12h4M16 11h.01M18 13h.01"/>',
 cart:'<path d="M3 4h2l2.5 11h10L20 7H6.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/>',trophy:'<path d="M7 4h10v5a5 5 0 01-10 0zM7 6H4v2a3 3 0 003 3M17 6h3v2a3 3 0 01-3 3M12 14v4M8 21h8"/>',
 user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/>',gift:'<rect x="3" y="9" width="18" height="4" rx="1"/><path d="M5 13v8h14v-8M12 9v12M12 9S9 3 7.5 5 12 9 12 9zM12 9s3-6 4.5-4S12 9 12 9z"/>',
-bomb:'<circle cx="11" cy="14" r="7"/><path d="M16 8l3-3M19 2v3M17 4h4"/>',roulette:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/>',jump:'<path d="M12 19V5M6 11l6-6 6 6M5 22h14"/>',users:'<circle cx="9" cy="8" r="3.5"/><path d="M2 21a7 7 0 0114 0M17 4.5a3.5 3.5 0 010 7M19 21a6 6 0 00-3-5.2"/>',mega:'<path d="M3 11v2a1 1 0 001 1h2l7 4V6L6 10H4a1 1 0 00-1 1zM16 8a5 5 0 010 8M19 5a9 9 0 010 14"/>',flag:'<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',gem:'<path d="M6 3h12l4 6-10 12L2 9zM2 9h20M9 3l-2 6 5 12 5-12-2-6"/>',
+bomb:'<circle cx="11" cy="14" r="7"/><path d="M16 8l3-3M19 2v3M17 4h4"/>',roulette:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/>',jump:'<path d="M12 19V5M6 11l6-6 6 6M5 22h14"/>',users:'<circle cx="9" cy="8" r="3.5"/><path d="M2 21a7 7 0 0114 0M17 4.5a3.5 3.5 0 010 7M19 21a6 6 0 00-3-5.2"/>',mega:'<path d="M3 11v2a1 1 0 001 1h2l7 4V6L6 10H4a1 1 0 00-1 1zM16 8a5 5 0 010 8M19 5a9 9 0 010 14"/>',flag:'<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',cards:'<rect x="4" y="3" width="11" height="16" rx="2"/><path d="M9 21h8a3 3 0 003-3V8M8 8h.01"/>',gem:'<path d="M6 3h12l4 6-10 12L2 9zM2 9h20M9 3l-2 6 5 12 5-12-2-6"/>',
 star:'<path d="M12 2l3 7 7 .5-5 5 1.5 7.5-6.5-4-6.5 4L7 14.5l-5-5L9 9z" fill="currentColor"/>',lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/>',back:'<path d="M15 5l-7 7 7 7"/>',crown:'<path d="M3 8l4 4 5-7 5 7 4-4-2 11H5z"/>'};
 function ic(n,a){return '<i class="ic a-'+(a||"")+'"><svg viewBox="0 0 24 24">'+P[n]+'</svg></i>'}
 function icons(){document.querySelectorAll("i[data-i]").forEach(function(e){e.outerHTML=ic(e.dataset.i,e.dataset.a)})}
@@ -259,7 +275,7 @@ function go(p){document.querySelectorAll(".page").forEach(function(e){e.classLis
  if(J&&J.run)jend();if(p==="games")closeGame();if(p==="top")loadTop();if(p==="tour"){trOpen=null;loadTour()}if(p==="me"){loadOrders();loadAdmin();loadRef()}render();window.scrollTo(0,0)}
 $("nav").onclick=function(e){var b=e.target.closest("button");if(b)go(b.dataset.p)};
 async function refresh(){var r=await api("/rest/v1/profiles?select=*");U=r[0];
- var l=await api("/rest/v1/game_limits?select=game,spent&day=eq."+msk());spentM=0;spentR=0;spentJ=0;l.forEach(function(x){if(x.game==="roulette")spentR=x.spent;else if(x.game==="jump")spentJ=x.spent;else spentM=x.spent});render()}
+ var l=await api("/rest/v1/game_limits?select=game,spent&day=eq."+msk());spentM=0;spentR=0;spentJ=0;spentB=0;l.forEach(function(x){if(x.game==="roulette")spentR=x.spent;else if(x.game==="jump")spentJ=x.spent;else if(x.game==="blackjack")spentB=x.spent;else spentM=x.spent});render()}
 /* daily */
 function nextDay(){if(!U)return 0;var t=msk();if(U.last_claim===t)return 0;if(U.last_claim===msk(Date.now()-864e5))return U.streak%7+1;return 1}
 async function claim(){if(busy)return;busy=true;try{var w=await rpc("claim_daily");await refresh();toast("+"+w+" VALYX Coins")}catch(e){fail(e)}busy=false}
@@ -272,7 +288,7 @@ function renderDaily(){if(!U)return;var nd=nextDay(),got=U.last_claim===msk(),cu
   $("dsub").textContent=U.streak===7?"Неделя пройдена. Завтра цикл начнётся заново":"Заходи завтра за новой наградой"}}
 setInterval(function(){if($("p-home").classList.contains("on"))renderDaily()},1000);
 /* minesweeper (server side) */
-function showG(v){$("gList").style.display=v?"none":"block";$("gView").style.display=v==="m"?"block":"none";$("rView").style.display=v==="r"?"block":"none";$("jView").style.display=v==="j"?"block":"none"}
+function showG(v){$("gList").style.display=v?"none":"block";$("gView").style.display=v==="m"?"block":"none";$("rView").style.display=v==="r"?"block":"none";$("jView").style.display=v==="j"?"block":"none";$("bView").style.display=v==="b"?"block":"none"}
 function openGame(){showG("m");renderGame()}
 function closeGame(){if(J&&J.run)jend();if(jfs)jFull(false);showG("")}
 function openRoul(){showG("r");renderRoul()}
@@ -437,7 +453,7 @@ function fmtMsk(t){return new Date(t).toLocaleString("ru-RU",{timeZone:"Europe/M
 function mskIn(t){return t?new Date(t).toLocaleString("sv-SE",{timeZone:"Europe/Moscow"}).slice(0,16).replace(" ","T"):""}
 function prizeTxt(t){return t.prize_type==="points"?(t.prize_amount||"")+" баллов сайта":t.prize_type==="vp"?(t.prize_amount||"")+" VP":t.prize_type==="money"?(t.prize_amount||"Денежный приз"):"без приза"}
 function tmOf(t,id){return t.teams.filter(function(x){return x.id===id})[0]}
-async function loadTour(){try{TR=await api("/rest/v1/tournaments?select=*,teams!tournament_id(id,tournament_id,name,players),matches(*)&order=starts_at.desc");TOP=await rpc("tournament_top");renderTour()}catch(e){toast("Турниры: "+e.message)}}
+async function loadTour(){try{TR=await api("/rest/v1/tournaments?select=*,teams!tournament_id(id,tournament_id,name,players),matches(*)&order=starts_at.desc");TOP=await rpc("tournament_top");renderHomeTour();renderTour()}catch(e){toast("Турниры: "+e.message)}}
 function setTrf(v){trf=v;renderTour()}
 function openTour(id){trOpen=id;renderTour();window.scrollTo(0,0)}
 function closeTour(){trOpen=null;hideTeam();renderTour()}
@@ -495,12 +511,33 @@ async function wcreate(){if(busy)return;busy=true;
  var pl={name:WZ.name.trim(),format:WZ.fmt,starts_at:WZ.dt+":00+03:00",prize_type:WZ.pt,prize_amount:WZ.pt==="none"?"":WZ.amt,teams:WZ.teams.map(function(t){return {name:t.name.trim(),players:t.players.filter(function(p){return p.nick.trim()}).map(function(p){return {nick:p.nick.trim(),rank:p.rank,tg:(p.tg||"").trim()}})}}),pairs:WZ.pairs};
  try{var tid=await rpc("admin_create_tournament",{p:pl});WZ=null;$("twiz").style.display="none";await loadTour();
   try{var r=await api("/functions/v1/tournament-notify",{method:"POST",body:{action:"bracket",tournament:tid}});toast("Турнир создан. Сообщений отправлено: "+r.sent+(r.missing&&r.missing.length?". Не найдены: "+r.missing.join(", "):""))}catch(e2){toast("Турнир создан, сообщения пока не отправились")}}catch(e){fail(e)}busy=false}
+/* blackjack */
+var BJ=null,bbet=100,spentB=0,bjp={p:0,d:0},SUIT=["♠","♥","♦","♣"],RK=["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
+function bcard(c,i,pn){var k=Math.floor(c/13),red=k===1||k===2;return '<div class="pc'+(red?" r":"")+'"'+(i<pn?' style="animation:none"':' style="animation-delay:'+((i-pn)*.12)+'s"')+'>'+RK[c%13]+SUIT[k]+'</div>'}
+function openBJ(){showG("b");renderBJ()}
+function setBBet(v){if(!busy&&!(BJ&&BJ.status==="active")){bbet=v;renderBJ()}}
+async function bjDo(fn,args){if(busy)return;busy=true;try{BJ=await rpc(fn,args);await refresh()}catch(e){fail(e)}busy=false;renderBJ()}
+function bjDeal(){bjp={p:0,d:0};bjDo("bj_start",{p_bet:bbet})}
+function bjHit(){bjDo("bj_hit",{p_game:BJ.id})}
+function bjStand(){bjDo("bj_stand",{p_game:BJ.id})}
+function renderBJ(){if(!$("bdeal"))return;chips("bbets",BETS,bbet,"setBBet","star");
+ $("blim").textContent=fmt(spentB)+" / "+fmt(LIMIT);$("blimbar").style.width=Math.min(100,spentB/LIMIT*100)+"%";
+ var on=BJ&&BJ.status==="active",msg="";
+ if(BJ){$("bdealer").innerHTML=BJ.dealer.map(function(c,i){return bcard(c,i,bjp.d)}).join("")+(BJ.hidden?'<div class="pc b"></div>':"");
+  $("bplayer").innerHTML=BJ.player.map(function(c,i){return bcard(c,i,bjp.p)}).join("");$("bdt").textContent=BJ.hidden?"?":BJ.dtotal;$("bpt").textContent=BJ.ptotal;
+  bjp={p:BJ.player.length,d:BJ.dealer.length+(BJ.hidden?1:0)};
+  if(!on)msg={blackjack:"Блэкджек! +"+fmt(BJ.payout),win:"Победа! +"+fmt(BJ.payout),push:"Ничья, ставка возвращена",lose:"Проигрыш",bust:"Перебор, проигрыш"}[BJ.result]||""}
+ else{$("bdealer").innerHTML=$("bplayer").innerHTML="";$("bdt").textContent=$("bpt").textContent=""}
+ $("bres").textContent=msg;$("bact").style.display=on?"flex":"none";$("bdeal").style.display=on?"none":"block";$("bdeal").textContent="Раздать за "+bbet;$("bdeal").disabled=busy}
+function renderHomeTour(){var el=$("hTourBody");if(!el)return;
+ var up=TR.filter(function(t){return t.status!=="finished"}).sort(function(a,b){return new Date(a.starts_at)-new Date(b.starts_at)})[0];
+ el.innerHTML=up?'<div class="sub" style="margin-bottom:12px"><b style="color:var(--tx)">'+esc(up.name)+'</b><br>'+up.format+' на '+up.format+' · '+fmtMsk(up.starts_at)+'<br>Приз: '+esc(prizeTxt(up))+'</div><button class="btn" onclick="go(\'tour\');openTour(\''+up.id+'\')">Смотреть сетку</button><button class="btn ghost" style="margin-top:10px" onclick="go(\'tour\')">Все турниры</button>':'<div class="sub">Ближайший турнир скоро появится. Время везде указано по МСК.</div><button class="btn ghost" onclick="go(\'tour\')">Все турниры</button>'}
 /* render + start */
-function render(){if(!U)return;$("bal").textContent=fmt(U.balance);renderDaily();renderGame();renderRoul();renderJump();renderShop();renderMe()}
+function render(){if(!U)return;$("bal").textContent=fmt(U.balance);renderDaily();renderGame();renderRoul();renderJump();renderBJ();renderShop();renderMe()}
 async function beat(){try{$("onl").textContent=await rpc("heartbeat")}catch(e){}}
 async function boot(again){if(!again){icons();buildWheel()}
  if(!TG||!TG.initData){$("ovt").textContent="Открой сайт через Telegram";$("ovs").textContent="Нажми кнопку в боте, чтобы войти и играть.";return}
- try{TG.ready();TG.expand();if(TG.disableVerticalSwipes)TG.disableVerticalSwipes();await login();await refresh();try{await rpc("settle_jump");await refresh()}catch(e){}G=await rpc("mines_current");await loadOrders();render();beat();setInterval(beat,60000);$("ov").style.display="none"}
+ try{TG.ready();TG.expand();if(TG.disableVerticalSwipes)TG.disableVerticalSwipes();await login();await refresh();try{await rpc("settle_jump");await refresh()}catch(e){}G=await rpc("mines_current");await loadOrders();render();loadTour();try{BJ=await rpc("bj_current")}catch(e){}renderBJ();beat();setInterval(beat,60000);$("ov").style.display="none"}
  catch(e){if(e.message==="not_subscribed"){showGate(again);return}$("ovt").textContent="Не удалось войти";$("ovs").textContent="Закрой и открой приложение заново. ("+e.message+")"}}
 boot();
 </script>
