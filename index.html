@@ -437,7 +437,7 @@ function fmtMsk(t){return new Date(t).toLocaleString("ru-RU",{timeZone:"Europe/M
 function mskIn(t){return t?new Date(t).toLocaleString("sv-SE",{timeZone:"Europe/Moscow"}).slice(0,16).replace(" ","T"):""}
 function prizeTxt(t){return t.prize_type==="points"?(t.prize_amount||"")+" баллов сайта":t.prize_type==="vp"?(t.prize_amount||"")+" VP":t.prize_type==="money"?(t.prize_amount||"Денежный приз"):"без приза"}
 function tmOf(t,id){return t.teams.filter(function(x){return x.id===id})[0]}
-async function loadTour(){try{TR=await api("/rest/v1/tournaments?select=*,teams(*),matches(*)&order=starts_at.desc");TOP=await rpc("tournament_top");renderTour()}catch(e){}}
+async function loadTour(){try{TR=await api("/rest/v1/tournaments?select=*,teams(id,tournament_id,name,players),matches(*)&order=starts_at.desc");TOP=await rpc("tournament_top");renderTour()}catch(e){}}
 function setTrf(v){trf=v;renderTour()}
 function openTour(id){trOpen=id;renderTour();window.scrollTo(0,0)}
 function closeTour(){trOpen=null;hideTeam();renderTour()}
@@ -468,7 +468,7 @@ async function saveM(id){var a=+($("sa"+id)?$("sa"+id).value:0)||0,b=+($("sb"+id
  try{await rpc("admin_set_match",{p_match:id,p_a:a,p_b:b,p_start:s?s+":00+03:00":null});await loadTour();toast("Сохранено")}catch(e){fail(e)}}
 async function delTour(id){if(!confirm("Удалить турнир?"))return;try{await rpc("admin_delete_tournament",{p_id:id});trOpen=null;await loadTour()}catch(e){fail(e)}}
 /* tournament wizard (admin) */
-function wteams(){var t=[],i;for(i=0;i<WZ.n;i++){var o=WZ.teams[i]||{name:"",players:[]};while(o.players.length<WZ.fmt)o.players.push({nick:"",rank:""});o.players=o.players.slice(0,WZ.fmt);t.push(o)}WZ.teams=t;WZ.pairs=[];for(i=0;i<WZ.n;i+=2)WZ.pairs.push([i,i+1])}
+function wteams(){var t=[],i;for(i=0;i<WZ.n;i++){var o=WZ.teams[i]||{name:"",players:[]};while(o.players.length<WZ.fmt)o.players.push({nick:"",tg:"",rank:""});o.players=o.players.slice(0,WZ.fmt);t.push(o)}WZ.teams=t;WZ.pairs=[];for(i=0;i<WZ.n;i+=2)WZ.pairs.push([i,i+1])}
 function openWiz(){WZ={s:1,name:"",fmt:5,dt:"",pt:"none",amt:"",n:4,teams:[],pairs:[]};wteams();renderWiz();$("twiz").style.display="block";renderTour();$("twiz").scrollIntoView()}
 function wclose(){WZ=null;$("twiz").style.display="none";renderTour()}
 function tchips(arr,cur,fn){return arr.map(function(v){return '<button class="chip'+(cur===v?" on":"")+'" onclick="'+fn+'('+v+')">'+(typeof v==="number"&&fn==="wFmt"?v+"×"+v:v)+'</button>'}).join("")}
@@ -481,7 +481,7 @@ function renderWiz(){var s=WZ.s,T=["Основное","Команды","Сетк
   (WZ.pt!=="none"?'<input class="inp" style="width:100%" maxlength="40" placeholder="'+(WZ.pt==="money"?"Например: 5000 ₽":"Сколько")+'" value="'+esc(WZ.amt)+'" oninput="WZ.amt=this.value">':"")}
  if(s===2){h+='<div class="lbl">Сколько команд</div><div class="row">'+tchips([2,4,8],WZ.n,"wN")+'</div>';
   WZ.teams.forEach(function(t,i){h+='<div class="mt"><input class="inp" style="width:100%" maxlength="30" placeholder="Название команды '+(i+1)+'" value="'+esc(t.name)+'" oninput="WZ.teams['+i+'].name=this.value">';
-   t.players.forEach(function(p,j){h+='<div class="row" style="margin:6px 0 0"><input class="inp" maxlength="24" placeholder="Ник игрока '+(j+1)+'" value="'+esc(p.nick)+'" oninput="WZ.teams['+i+'].players['+j+'].nick=this.value"><select class="inp" style="flex:0 0 118px" onchange="WZ.teams['+i+'].players['+j+'].rank=this.value">'+RANKS.map(function(r){return '<option value="'+r+'"'+(p.rank===r?" selected":"")+'>'+(r||"Ранг")+'</option>'}).join("")+'</select></div>'});h+='</div>'})}
+   t.players.forEach(function(p,j){h+='<div class="row" style="margin:6px 0 0"><input class="inp" maxlength="24" placeholder="Игровой ник '+(j+1)+'" value="'+esc(p.nick)+'" oninput="WZ.teams['+i+'].players['+j+'].nick=this.value"><select class="inp" style="flex:0 0 118px" onchange="WZ.teams['+i+'].players['+j+'].rank=this.value">'+RANKS.map(function(r){return '<option value="'+r+'"'+(p.rank===r?" selected":"")+'>'+(r||"Ранг")+'</option>'}).join("")+'</select></div><input class="inp" style="width:100%;margin-top:6px" maxlength="33" placeholder="Telegram: @username (для сообщений)" value="'+esc(p.tg||"")+'" oninput="WZ.teams['+i+'].players['+j+'].tg=this.value">'});h+='</div>'})}
  if(s===3){h+='<div class="sub">Выбери, кто с кем играет в первом раунде. Дальше сетка заполнится сама по победителям.</div>';
   WZ.pairs.forEach(function(pr,k){h+='<div class="lbl">Матч '+(k+1)+'</div><div class="row">'+[0,1].map(function(side){return '<select class="inp" onchange="WZ.pairs['+k+']['+side+']=+this.value">'+WZ.teams.map(function(t,i){return '<option value="'+i+'"'+(pr[side]===i?" selected":"")+'>'+esc(t.name||"Команда "+(i+1))+'</option>'}).join("")+'</select>'}).join("")+'</div>'})}
  if(s===4){h+='<div class="item" style="display:block"><b>'+esc(WZ.name)+'</b><small>'+WZ.fmt+' на '+WZ.fmt+' · '+WZ.n+' команд<br>'+fmtMsk(WZ.dt+":00+03:00")+'<br>Приз: '+esc(prizeTxt({prize_type:WZ.pt,prize_amount:WZ.amt}))+'</small></div>'+WZ.pairs.map(function(pr,k){return '<div class="item"><span>Матч '+(k+1)+'</span><b>'+esc(WZ.teams[pr[0]].name)+' vs '+esc(WZ.teams[pr[1]].name)+'</b></div>'}).join("")+'<div class="sub" style="margin-top:10px">Полуфиналы и раунды до финала играются до 1 победы, финал до 2.</div>'}
@@ -492,8 +492,9 @@ function wgo(d){if(d>0){var s=WZ.s;
   if(s===3){var u={};WZ.pairs.forEach(function(p){u[p[0]]=1;u[p[1]]=1});if(Object.keys(u).length!==WZ.n){toast("Каждая команда должна играть ровно один раз");return}}}
  WZ.s+=d;renderWiz();$("twiz").scrollIntoView()}
 async function wcreate(){if(busy)return;busy=true;
- var pl={name:WZ.name.trim(),format:WZ.fmt,starts_at:WZ.dt+":00+03:00",prize_type:WZ.pt,prize_amount:WZ.pt==="none"?"":WZ.amt,teams:WZ.teams.map(function(t){return {name:t.name.trim(),players:t.players.filter(function(p){return p.nick.trim()}).map(function(p){return {nick:p.nick.trim(),rank:p.rank}})}}),pairs:WZ.pairs};
- try{await rpc("admin_create_tournament",{p:pl});WZ=null;$("twiz").style.display="none";toast("Турнир создан");await loadTour()}catch(e){fail(e)}busy=false}
+ var pl={name:WZ.name.trim(),format:WZ.fmt,starts_at:WZ.dt+":00+03:00",prize_type:WZ.pt,prize_amount:WZ.pt==="none"?"":WZ.amt,teams:WZ.teams.map(function(t){return {name:t.name.trim(),players:t.players.filter(function(p){return p.nick.trim()}).map(function(p){return {nick:p.nick.trim(),rank:p.rank,tg:(p.tg||"").trim()}})}}),pairs:WZ.pairs};
+ try{var tid=await rpc("admin_create_tournament",{p:pl});WZ=null;$("twiz").style.display="none";await loadTour();
+  try{var r=await api("/functions/v1/tournament-notify",{method:"POST",body:{action:"bracket",tournament:tid}});toast("Турнир создан. Сообщений отправлено: "+r.sent+(r.missing&&r.missing.length?". Не найдены: "+r.missing.join(", "):""))}catch(e2){toast("Турнир создан, сообщения пока не отправились")}}catch(e){fail(e)}busy=false}
 /* render + start */
 function render(){if(!U)return;$("bal").textContent=fmt(U.balance);renderDaily();renderGame();renderRoul();renderJump();renderShop();renderMe()}
 async function beat(){try{$("onl").textContent=await rpc("heartbeat")}catch(e){}}
