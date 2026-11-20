@@ -221,7 +221,7 @@ select.inp{appearance:none}
 
 <section class="page" id="p-me">
   <div class="card" style="margin-top:0"><h2 id="nick"></h2><div class="sub">Заработано всего: <b id="earned"></b><br>Серия входов: <b id="streakTxt"></b></div>
-    <div class="lbl">Сменить ник</div><div class="row"><input id="nickIn" maxlength="16" style="flex:1;min-width:0;background:var(--panel2);border:1px solid var(--line);color:var(--tx);border-radius:12px;padding:11px;font-size:15px"><button class="chip" style="flex:0 0 100px" onclick="setNick()">Сохранить</button></div></div>
+    <div class="lbl">Сменить ник</div><div class="row"><input id="nickIn" maxlength="16" style="flex:1;min-width:0;background:var(--panel2);border:1px solid var(--line);color:var(--tx);border-radius:12px;padding:11px;font-size:15px"><button class="chip" style="flex:0 0 100px" onclick="setNick()">Сохранить</button></div><div class="stat" style="margin-top:14px"><span>Уведомления о награде в боте</span><button class="chip" id="ntf" style="flex:0 0 84px" onclick="toggleNotify()">Вкл</button></div></div>
   <div class="card"><h2><i data-i="gift" data-a="bob"></i>Промокод</h2><div class="sub">Введи код от стримера и получи бонус</div><div class="row" style="margin:0"><input class="inp" id="pc" maxlength="20" placeholder="Например VALYX100"><button class="chip" style="flex:0 0 120px" onclick="redeem()">Активировать</button></div></div>
   <div class="card"><h2><i data-i="users" data-a="bob"></i>Пригласи друга</h2><div class="sub">Друг засчитывается, когда заработает 500 баллов (без промокодов) и зайдёт в игру минимум в 3 разных дня. Тогда ты получаешь 500 баллов, а дальше 2,5% от всего, что он зарабатывает.</div>
     <div class="stat"><span>Получено с друзей</span><span id="rinc">0</span></div>
@@ -325,9 +325,10 @@ async function loadTop(){try{var L=await rpc("leaderboard"),d=new Date().toLocal
 function esc(s){return String(s).replace(/[&<>"']/g,function(c){return "&#"+c.charCodeAt(0)+";"})}
 async function setNick(){var v=$("nickIn").value.trim().slice(0,16);if(!v)return;try{await api("/rest/v1/profiles?id=eq."+U.id,{method:"PATCH",body:{nick:v}});await refresh();toast("Ник сохранён")}catch(e){fail(e)}}
 async function loadOrders(){try{orders=await api("/rest/v1/orders?select=vp,code,status,created_at,vp_code&user_id=eq."+U.id+"&order=created_at.desc");renderMe()}catch(e){}}
-function renderMe(){if(!U)return;$("nick").textContent=U.nick;$("earned").textContent=fmt(U.earned);$("streakTxt").textContent=U.streak+" из 7";
+function renderMe(){if(!U)return;if($("ntf"))$("ntf").textContent=U.notify_daily===false?"Выкл":"Вкл";$("nick").textContent=U.nick;$("earned").textContent=fmt(U.earned);$("streakTxt").textContent=U.streak+" из 7";
  $("orders").innerHTML=orders.length?orders.map(function(o){return '<div class="item"><div><b>'+fmt(o.vp)+' VP</b><small>'+new Date(o.created_at).toLocaleString("ru-RU")+'</small><span class="code">'+o.code+'</span>'+(o.vp_code?'<small>Твой код VP:</small><span class="code" style="color:var(--ok);user-select:all">'+esc(o.vp_code)+'</span>':'')+'</div><span class="tag">'+(o.status==="issued"?"Выдано":"Ожидает выдачи")+'</span></div>'}).join(""):'<div class="sub">Пока пусто. Обменяй баллы в магазине.</div>';
  $("adm").style.display=U.is_admin?"block":"none"}
+async function toggleNotify(){if(busy||!U)return;busy=true;try{await rpc("set_notify",{p_on:U.notify_daily===false});await refresh();toast(U.notify_daily===false?"Уведомления выключены":"Уведомления включены")}catch(e){fail(e)}busy=false}
 /* promo codes */
 function cl(s){return s.toUpperCase().replace(/[^A-Z0-9_-]/g,"")}
 async function redeem(){var c=cl($("pc").value);if(!c||busy)return;busy=true;try{var w=await rpc("redeem_promo",{p_code:c});$("pc").value="";await refresh();toast("+"+fmt(w)+" VALYX Coins")}catch(e){fail(e)}busy=false}
